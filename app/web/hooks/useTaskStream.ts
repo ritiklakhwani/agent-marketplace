@@ -2,18 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import { taskEventSchema, TaskEvent } from "@agent-marketplace/types";
-import { createMockTaskEvents } from "@/lib/mockData";
+import { createMockTaskEvents, initialPortfolio, PortfolioRow } from "@/lib/mockData";
+import { AgentSlug } from "@/lib/agents";
 
 type StreamState = {
   taskId: string | null;
   isRunning: boolean;
   events: TaskEvent[];
+  portfolio: PortfolioRow[];
 };
 
 const INITIAL_STATE: StreamState = {
   taskId: null,
   isRunning: false,
   events: [],
+  portfolio: initialPortfolio,
 };
 
 export function useTaskStream() {
@@ -32,16 +35,17 @@ export function useTaskStream() {
     setState(INITIAL_STATE);
   };
 
-  const startMockStream = (insurance: boolean) => {
+  const startMockStream = (agent: AgentSlug, insurance: boolean) => {
     reset();
 
     const taskId = `mock-${Date.now()}`;
-    const events = createMockTaskEvents(insurance);
+    const events = createMockTaskEvents(agent, insurance);
 
     setState({
       taskId,
       isRunning: true,
       events: [],
+      portfolio: initialPortfolio,
     });
 
     events.forEach((event, index) => {
@@ -50,11 +54,20 @@ export function useTaskStream() {
         setState((current) => {
           const nextEvents = [...current.events, parsedEvent];
           const isDone = parsedEvent.type === "task_complete";
+          const hasFailed = nextEvents.some(
+            (e) => e.type === "execution_step" && e.status === "failed"
+          );
+
+          const portfolio =
+            isDone && !hasFailed
+              ? current.portfolio.map((row) => ({ ...row, current: row.target }))
+              : current.portfolio;
 
           return {
             taskId: current.taskId,
-            isRunning: isDone ? false : true,
+            isRunning: !isDone,
             events: nextEvents,
+            portfolio,
           };
         });
       }, 900 * (index + 1));
@@ -67,6 +80,7 @@ export function useTaskStream() {
     taskId: state.taskId,
     isRunning: state.isRunning,
     events: state.events,
+    portfolio: state.portfolio,
     reset,
     startMockStream,
   };

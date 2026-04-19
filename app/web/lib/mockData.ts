@@ -1,4 +1,5 @@
 import { TaskEvent } from "@agent-marketplace/types";
+import { AgentSlug } from "@/lib/agents";
 
 export type PortfolioRow = {
   symbol: string;
@@ -12,7 +13,44 @@ export const initialPortfolio: PortfolioRow[] = [
   { symbol: "NVDA", target: 30, current: 0 },
 ];
 
-export function createMockTaskEvents(insurance: boolean): TaskEvent[] {
+export function createMockTaskEvents(
+  agent: AgentSlug,
+  insurance: boolean
+): TaskEvent[] {
+  if (agent === "remittance-agent") {
+    const remitEvents: TaskEvent[] = [
+      {
+        type: "execution_step",
+        stepIndex: 0,
+        label: "Recipient wallet validated",
+        status: "complete",
+      },
+      {
+        type: "execution_step",
+        stepIndex: 1,
+        label: insurance
+          ? "USDC transfer failed: refund path triggered"
+          : "USDC transfer prepared on devnet",
+        status: insurance ? "failed" : "complete",
+      },
+      {
+        type: "reputation_update",
+        agent: "remittance-agent",
+        delta: insurance ? -1 : 1,
+      },
+    ];
+
+    if (insurance) {
+      return [
+        ...remitEvents,
+        { type: "insurance_refund", amount: 20.1, txSig: "mock-remit-refund" },
+        { type: "task_complete" },
+      ];
+    }
+
+    return [...remitEvents, { type: "task_complete" }];
+  }
+
   const baseEvents: TaskEvent[] = [
     { type: "bid", agent: "portfolio-a", feePct: 0.6 },
     { type: "bid", agent: "portfolio-b", feePct: 0.4 },

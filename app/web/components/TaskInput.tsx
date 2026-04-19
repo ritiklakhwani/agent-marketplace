@@ -5,13 +5,20 @@ import { FormEvent, useState } from "react";
 type TaskInputProps = {
   onSubmit: (args: { prompt: string; insurance: boolean }) => void;
   isRunning: boolean;
+  defaultPrompt?: string;
+  shellMode?: "auction" | "direct";
 };
 
 const DEFAULT_PROMPT =
   "Maintain 40% AAPL, 30% TSLA, 30% NVDA with $500";
 
-export function TaskInput({ onSubmit, isRunning }: TaskInputProps) {
-  const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
+export function TaskInput({
+  onSubmit,
+  isRunning,
+  defaultPrompt = DEFAULT_PROMPT,
+  shellMode = "auction",
+}: TaskInputProps) {
+  const [prompt, setPrompt] = useState(defaultPrompt);
   const [insurance, setInsurance] = useState(false);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -28,7 +35,9 @@ export function TaskInput({ onSubmit, isRunning }: TaskInputProps) {
         <div>
           <p className="text-sm font-semibold text-zinc-900">Task Input</p>
           <p className="text-sm text-zinc-500">
-            Natural language in, structured task later.
+            {shellMode === "auction"
+              ? "Natural language in, routed to the flagship rebalance flow."
+              : "Natural language in, routed to the remittance flow."}
           </p>
         </div>
         <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
@@ -67,7 +76,11 @@ export function TaskInput({ onSubmit, isRunning }: TaskInputProps) {
           disabled={isRunning}
           className="rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
         >
-          {isRunning ? "Running..." : "Start Mock Task"}
+          {isRunning
+            ? "Running..."
+            : shellMode === "auction"
+            ? "Start Mock Swap Flow"
+            : "Start Mock Remittance Flow"}
         </button>
       </div>
     </form>
