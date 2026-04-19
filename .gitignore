@@ -1,0 +1,11 @@
+.codex
+
+old-md
+
+node_modules
+.next
+.env
+.env.local
+target
+dist
+coverage
