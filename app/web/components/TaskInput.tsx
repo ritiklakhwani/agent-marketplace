@@ -1,0 +1,75 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+
+type TaskInputProps = {
+  onSubmit: (args: { prompt: string; insurance: boolean }) => void;
+  isRunning: boolean;
+};
+
+const DEFAULT_PROMPT =
+  "Maintain 40% AAPL, 30% TSLA, 30% NVDA with $500";
+
+export function TaskInput({ onSubmit, isRunning }: TaskInputProps) {
+  const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
+  const [insurance, setInsurance] = useState(false);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onSubmit({ prompt, insurance });
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm"
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold text-zinc-900">Task Input</p>
+          <p className="text-sm text-zinc-500">
+            Natural language in, structured task later.
+          </p>
+        </div>
+        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+          Router is the only LLM
+        </span>
+      </div>
+
+      <label className="mt-4 block">
+        <span className="mb-2 block text-sm font-medium text-zinc-700">
+          Prompt
+        </span>
+        <textarea
+          value={prompt}
+          onChange={(event) => setPrompt(event.target.value)}
+          rows={4}
+          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-900"
+        />
+      </label>
+
+      <label className="mt-4 flex items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">
+        <input
+          type="checkbox"
+          checked={insurance}
+          onChange={(event) => setInsurance(event.target.checked)}
+          className="h-4 w-4 rounded border-zinc-300"
+        />
+        Insure this task (+0.5%) and trigger refund path on failure demo
+      </label>
+
+      <div className="mt-4 flex items-center justify-between">
+        <p className="text-xs text-zinc-500">
+          Current mode: mocked frontend flow until backend handoff lands.
+        </p>
+        <button
+          type="submit"
+          disabled={isRunning}
+          className="rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
+        >
+          {isRunning ? "Running..." : "Start Mock Task"}
+        </button>
+      </div>
+    </form>
+  );
+}
