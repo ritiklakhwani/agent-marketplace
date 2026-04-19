@@ -1,0 +1,204 @@
+{
+  "address": "DZWJYyh2kVcyE9r55CJEWdqVN5w6Ny9iCN4ZHNR3Ms6u",
+  "metadata": {
+    "name": "registry",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "AgentBazaar Registry — agent metadata and reputation"
+  },
+  "instructions": [
+    {
+      "name": "register_agent",
+      "discriminator": [
+        135,
+        157,
+        66,
+        195,
+        2,
+        113,
+        175,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "endpoint",
+          "type": "string"
+        },
+        {
+          "name": "category",
+          "type": "string"
+        },
+        {
+          "name": "price_hint",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "update_reputation",
+      "discriminator": [
+        194,
+        220,
+        43,
+        201,
+        54,
+        209,
+        49,
+        178
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent.owner",
+                "account": "Agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "delta",
+          "type": "i32"
+        },
+        {
+          "name": "volume",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Agent",
+      "discriminator": [
+        47,
+        166,
+        112,
+        147,
+        155,
+        197,
+        86,
+        7
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "FieldTooLong",
+      "msg": "Field exceeds maximum length"
+    },
+    {
+      "code": 6001,
+      "name": "Unauthorized",
+      "msg": "Only the trusted signer can update reputation"
+    }
+  ],
+  "types": [
+    {
+      "name": "Agent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "endpoint",
+            "type": "string"
+          },
+          {
+            "name": "category",
+            "type": "string"
+          },
+          {
+            "name": "price_hint",
+            "type": "u64"
+          },
+          {
+            "name": "successes",
+            "type": "u32"
+          },
+          {
+            "name": "failures",
+            "type": "u32"
+          },
+          {
+            "name": "score",
+            "type": "i32"
+          },
+          {
+            "name": "total_volume",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

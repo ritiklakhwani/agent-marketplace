@@ -1,0 +1,399 @@
+{
+  "address": "HyrtJmJWGAQayoaTWKDsvKxj3jqYYLHGn9LadKCS8Qpi",
+  "metadata": {
+    "name": "insurance",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "AgentBazaar Insurance Pool — staking and slash refunds"
+  },
+  "instructions": [
+    {
+      "name": "init_pool",
+      "discriminator": [
+        116,
+        233,
+        199,
+        204,
+        115,
+        159,
+        171,
+        36
+      ],
+      "accounts": [
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  117,
+                  114,
+                  97,
+                  110,
+                  99,
+                  101,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  117,
+                  114,
+                  97,
+                  110,
+                  99,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "release_to_user",
+      "discriminator": [
+        159,
+        149,
+        153,
+        244,
+        3,
+        214,
+        222,
+        140
+      ],
+      "accounts": [
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  117,
+                  114,
+                  97,
+                  110,
+                  99,
+                  101,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  117,
+                  114,
+                  97,
+                  110,
+                  99,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "recipient_token_account",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "task_id",
+          "type": "string"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "stake_funds",
+      "discriminator": [
+        233,
+        177,
+        34,
+        90,
+        201,
+        230,
+        122,
+        193
+      ],
+      "accounts": [
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  117,
+                  114,
+                  97,
+                  110,
+                  99,
+                  101,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  117,
+                  114,
+                  97,
+                  110,
+                  99,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "funder_token_account",
+          "writable": true
+        },
+        {
+          "name": "funder",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "InsurancePool",
+      "discriminator": [
+        239,
+        152,
+        145,
+        201,
+        228,
+        155,
+        139,
+        140
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "RefundEvent",
+      "discriminator": [
+        176,
+        159,
+        218,
+        59,
+        94,
+        213,
+        129,
+        218
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "Only the trusted signer can authorize refunds"
+    },
+    {
+      "code": 6001,
+      "name": "ZeroAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6002,
+      "name": "VaultMismatch",
+      "msg": "Vault account mismatch"
+    },
+    {
+      "code": 6003,
+      "name": "TokenOwnerMismatch",
+      "msg": "Token account owner mismatch"
+    },
+    {
+      "code": 6004,
+      "name": "MintMismatch",
+      "msg": "Mint mismatch"
+    },
+    {
+      "code": 6005,
+      "name": "TaskIdTooLong",
+      "msg": "task_id exceeds maximum length"
+    }
+  ],
+  "types": [
+    {
+      "name": "InsurancePool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "usdc_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_staked",
+            "type": "u64"
+          },
+          {
+            "name": "total_released",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "vault_bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RefundEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "type": "string"
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}
