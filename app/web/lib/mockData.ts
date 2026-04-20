@@ -22,33 +22,31 @@ export function createMockTaskEvents(
       {
         type: "execution_step",
         stepIndex: 0,
-        label: "Recipient wallet validated",
+        label: "Burning USDC on Solana (CCTP V2)",
         status: "complete",
       },
       {
         type: "execution_step",
         stepIndex: 1,
-        label: insurance
-          ? "USDC transfer failed: refund path triggered"
-          : "USDC transfer prepared on devnet",
+        label: insurance ? "Circle attestation failed" : "Awaiting Circle attestation",
         status: insurance ? "failed" : "complete",
-      },
-      {
-        type: "reputation_update",
-        agent: "remittance-agent",
-        delta: insurance ? -1 : 1,
       },
     ];
 
     if (insurance) {
-      return [
-        ...remitEvents,
-        { type: "insurance_refund", amount: 20.1, txSig: "mock-remit-refund" },
-        { type: "task_complete" },
-      ];
+      return [...remitEvents, { type: "task_complete" }];
     }
 
-    return [...remitEvents, { type: "task_complete" }];
+    return [
+      ...remitEvents,
+      {
+        type: "execution_step",
+        stepIndex: 2,
+        label: "Minting USDC on Ethereum Sepolia",
+        status: "complete",
+      },
+      { type: "task_complete" },
+    ];
   }
 
   const baseEvents: TaskEvent[] = [

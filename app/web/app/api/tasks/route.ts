@@ -32,11 +32,19 @@ export async function POST(request: Request) {
       },
     });
 
-    void fetch(`${BASE}/api/coordinator`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ taskId: task.id, task: parsed, userWallet, insurance }),
-    }).catch(console.error);
+    if (parsed.type === "remit") {
+      void fetch(`${BASE}/api/agents/remit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: task.id, task: parsed }),
+      }).catch(console.error);
+    } else {
+      void fetch(`${BASE}/api/coordinator`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: task.id, task: parsed, userWallet, insurance }),
+      }).catch(console.error);
+    }
 
     return Response.json({ taskId: task.id, task: parsed });
   } catch (err) {

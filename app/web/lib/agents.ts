@@ -35,12 +35,12 @@ export const agents: AgentConfig[] = [
     routeLabel: "/remittance-agent",
     category: "Payments",
     description:
-      "Secondary V0 proof point: move USDC to another Solana address and set up the cross-border narrative for Dodo later.",
+      "Cross-chain USDC transfer via Circle CCTP V2: burn on Solana devnet, attest, mint on Ethereum Sepolia.",
     headline:
-      "Run the payments flow that proves AgentBazaar is more than a portfolio app.",
-    promptPlaceholder: "Send $20 USDC to 8xY...abc on Solana devnet",
+      "Burn USDC on Solana, get Circle attestation, mint on Ethereum — live CCTP V2 demo.",
+    promptPlaceholder: "Send $10 USDC to 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 on Ethereum",
     mode: "direct",
-    detailBadge: "USDC transfer mock path",
+    detailBadge: "Circle CCTP V2",
   },
 ];
 
