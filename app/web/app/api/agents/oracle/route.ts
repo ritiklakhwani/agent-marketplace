@@ -1,24 +1,35 @@
-// TODO: wrap with withX402(0.02, ORACLE_PUBKEY) once shared/x402 is built
+import { withX402 } from "@agentbazaar/x402/next";
+import { PublicKey } from "@solana/web3.js";
 
-// Mock prices used when Pyth fetch fails — Path B fallback per build plan
 const MOCK_PRICES: Record<string, number> = {
   AAPL: 182.5,
   TSLA: 248.3,
   NVDA: 467.1,
 };
 
-export async function POST(request: Request) {
-  const { symbols } = (await request.json()) as { symbols: string[] };
+// Falls back to system pubkey if env not set — withX402 will reject all calls,
+// but individual routes handle 402 gracefully.
+const ORACLE_PUBKEY = new PublicKey(process.env.AGENT_ORACLE_PUBKEY ?? "11111111111111111111111111111111");
+const USDC_MINT = new PublicKey(process.env.USDC_DEVNET_MINT ?? "11111111111111111111111111111111");
 
-  if (!symbols?.length) {
-    return Response.json({ error: "symbols required" }, { status: 400 });
-  }
+export const POST = withX402(
+  {
+    expectedRecipient: ORACLE_PUBKEY,
+    expectedAmount: 20_000n, // 0.02 USDC
+    expectedMint: USDC_MINT,
+  },
+  async (req, _ctx, payment) => {
+    const { symbols } = (await req.json()) as { symbols: string[] };
 
-  const prices: Record<string, number> = {};
+    if (!symbols?.length) {
+      return Response.json({ error: "symbols required" }, { status: 400 });
+    }
 
-  for (const symbol of symbols) {
-    prices[symbol] = MOCK_PRICES[symbol] ?? 100;
-  }
+    const prices: Record<string, number> = {};
+    for (const symbol of symbols) {
+      prices[symbol] = MOCK_PRICES[symbol] ?? 100;
+    }
 
-  return Response.json({ prices });
-}
+    return Response.json({ prices, paidBy: payment.payer });
+  },
+);

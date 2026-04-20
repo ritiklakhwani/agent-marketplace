@@ -36,6 +36,9 @@ importers:
       '@agentbazaar/solana':
         specifier: workspace:*
         version: link:../../shared/solana
+      '@agentbazaar/x402':
+        specifier: workspace:*
+        version: link:../../shared/x402
       '@anthropic-ai/sdk':
         specifier: ^0.90.0
         version: 0.90.0(zod@4.3.6)

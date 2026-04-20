@@ -21,16 +21,10 @@ function loadKeypair(secretPath: string): Keypair {
   return Keypair.fromSecretKey(Uint8Array.from(bytes));
 }
 
-// Lazy — only loads from disk when first needed. Falls back to ephemeral keypair
-// so read-only operations (readReputation) work even without the hot wallet file.
 let _hotWallet: Keypair | null = null;
 export function getAgentHotWallet(): Keypair {
   if (!_hotWallet) {
-    try {
-      _hotWallet = loadKeypair(HOT_WALLET_PATH);
-    } catch {
-      _hotWallet = Keypair.generate();
-    }
+    _hotWallet = loadKeypair(HOT_WALLET_PATH);
   }
   return _hotWallet;
 }
