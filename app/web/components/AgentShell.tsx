@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletButton } from "@/components/WalletButton";
 import { AuctionTicker } from "@/components/AuctionTicker";
 import { CompositionChain } from "@/components/CompositionChain";
@@ -16,12 +17,23 @@ type AgentShellProps = {
 };
 
 export function AgentShell({ agent }: AgentShellProps) {
-  const { taskId, isRunning, events, portfolio, startMockStream, reset } = useTaskStream();
+  const { publicKey } = useWallet();
+  const { taskId, isRunning, events, portfolio, error, startStream, startMockStream, reset } =
+    useTaskStream();
+
+  const handleSubmit = ({ prompt, insurance }: { prompt: string; insurance: boolean }) => {
+    if (publicKey) {
+      startStream(prompt, publicKey.toBase58(), insurance);
+    } else {
+      // wallet not connected — fall back to mock so UI is still demoable
+      startMockStream(agent.slug, insurance);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f4efe1,transparent_28%),linear-gradient(180deg,#f7f5ef_0%,#ece7dc_100%)] text-zinc-900">
       <main className="mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-8 md:px-10">
-        <header className="flex flex-col gap-4 rounded-[2rem] border border-black/10 bg-white/70 p-5 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between">
+        <header className="flex flex-col gap-4 rounded-4xl border border-black/10 bg-white/70 p-5 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between">
           <div>
             <Link
               href="/dashboard"
@@ -42,18 +54,30 @@ export function AgentShell({ agent }: AgentShellProps) {
               onClick={reset}
               className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
             >
-              Reset Mock State
+              Reset
             </button>
             <WalletButton />
           </div>
         </header>
+
+        {error ? (
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        ) : null}
+
+        {!publicKey ? (
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            Wallet not connected — running in mock mode. Connect Phantom to use the real backend.
+          </div>
+        ) : null}
 
         <section className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
             <TaskInput
               isRunning={isRunning}
               defaultPrompt={agent.promptPlaceholder}
-              onSubmit={({ insurance }) => startMockStream(agent.slug, insurance)}
+              onSubmit={handleSubmit}
               shellMode={agent.mode}
             />
             {agent.mode === "auction" ? (

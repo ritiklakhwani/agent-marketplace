@@ -44,7 +44,13 @@ export async function POST(request: Request) {
   });
 
   const raw = message.content[0].type === "text" ? message.content[0].text : "";
-  const parsed = taskSchema.safeParse(JSON.parse(extractJson(raw)));
+
+  let parsed;
+  try {
+    parsed = taskSchema.safeParse(JSON.parse(extractJson(raw)));
+  } catch {
+    return Response.json({ error: "Router returned non-JSON response" }, { status: 422 });
+  }
 
   if (!parsed.success) {
     return Response.json(

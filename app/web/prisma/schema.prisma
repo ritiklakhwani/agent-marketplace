@@ -17,9 +17,10 @@ model Task {
   insurance  Boolean  @default(false)
   createdAt  DateTime @default(now())
 
-  bids   Bid[]
-  steps  ExecutionStep[]
-  events InsuranceEvent[]
+  bids        Bid[]
+  steps       ExecutionStep[]
+  events      InsuranceEvent[]
+  remitEvents RemitEvent[]
 }
 
 model Bid {
@@ -67,6 +68,8 @@ model RemitEvent {
   txSig     String?
   status    String
   createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }
 
 model AgentMetadata {

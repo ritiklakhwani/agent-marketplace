@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@agent-marketplace/types": "workspace:*",
+    "@agentbazaar/solana": "workspace:*",
     "@anthropic-ai/sdk": "^0.90.0",
     "@coral-xyz/anchor": "^0.32.1",
     "@prisma/adapter-pg": "^7.7.0",

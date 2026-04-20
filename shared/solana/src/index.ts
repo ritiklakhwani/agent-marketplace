@@ -1,5 +1,4 @@
-import * as anchor from "@coral-xyz/anchor";
-import { AnchorProvider, BN, Program, Wallet } from "@coral-xyz/anchor";
+import { AnchorProvider, BN, Idl, Program, setProvider } from "@coral-xyz/anchor";
 import {
   Connection,
   Keypair,
@@ -22,7 +21,26 @@ function loadKeypair(secretPath: string): Keypair {
   return Keypair.fromSecretKey(Uint8Array.from(bytes));
 }
 
-export const AGENT_HOT_WALLET: Keypair = loadKeypair(HOT_WALLET_PATH);
+// Lazy — only loads from disk when first needed. Falls back to ephemeral keypair
+// so read-only operations (readReputation) work even without the hot wallet file.
+let _hotWallet: Keypair | null = null;
+export function getAgentHotWallet(): Keypair {
+  if (!_hotWallet) {
+    try {
+      _hotWallet = loadKeypair(HOT_WALLET_PATH);
+    } catch {
+      _hotWallet = Keypair.generate();
+    }
+  }
+  return _hotWallet;
+}
+
+// Keep exported const for backwards compat with scripts that import it directly
+export const AGENT_HOT_WALLET = new Proxy({} as Keypair, {
+  get(_target, prop) {
+    return (getAgentHotWallet() as never)[prop as keyof Keypair];
+  },
+});
 
 // ---------- Program IDs (read from IDL so they stay in sync) ----------
 export const REGISTRY_PROGRAM_ID = new PublicKey(
@@ -54,7 +72,13 @@ export function getProvider(
   connection: Connection = getConnection(),
   signer: Keypair = AGENT_HOT_WALLET,
 ): AnchorProvider {
-  return new AnchorProvider(connection, new Wallet(signer), {
+  const wallet = {
+    publicKey: signer.publicKey,
+    async signTransaction<T>(tx: T): Promise<T> { return tx; },
+    async signAllTransactions<T>(txs: T[]): Promise<T[]> { return txs; },
+    payer: signer,
+  };
+  return new AnchorProvider(connection, wallet as never, {
     commitment: "confirmed",
   });
 }
@@ -67,8 +91,8 @@ export function getRegistryClient(
   signer?: Keypair,
 ): Program {
   const provider = getProvider(connection, signer);
-  anchor.setProvider(provider);
-  return new Program(registryIdl as anchor.Idl, provider);
+  setProvider(provider);
+  return new Program(registryIdl as Idl, provider);
 }
 
 export function getInsuranceClient(
@@ -76,8 +100,8 @@ export function getInsuranceClient(
   signer?: Keypair,
 ): Program {
   const provider = getProvider(connection, signer);
-  anchor.setProvider(provider);
-  return new Program(insuranceIdl as anchor.Idl, provider);
+  setProvider(provider);
+  return new Program(insuranceIdl as Idl, provider);
 }
 
 // ---------- PDA helpers ----------

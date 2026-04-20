@@ -1,18 +1,16 @@
+import { prisma } from "@/lib/prisma";
 import { Task } from "@agent-marketplace/types";
 
+const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
 async function callRouter(prompt: string): Promise<Task> {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const res = await fetch(`${base}/api/agents/router`, {
+  const res = await fetch(`${BASE}/api/agents/router`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt }),
   });
   if (!res.ok) throw new Error(`Router failed: ${res.status}`);
   return res.json();
-}
-
-function generateTaskId(): string {
-  return `task_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export async function POST(request: Request) {
@@ -22,23 +20,26 @@ export async function POST(request: Request) {
     return Response.json({ error: "prompt is required" }, { status: 400 });
   }
 
-  const parsed = await callRouter(prompt);
+  try {
+    const parsed = await callRouter(prompt);
 
-  // TODO: replace with prisma.task.create once P1's DB is ready
-  const taskId = generateTaskId();
+    const task = await prisma.task.create({
+      data: {
+        userWallet: userWallet ?? "anonymous",
+        type: parsed.type,
+        payload: parsed,
+        insurance: insurance ?? false,
+      },
+    });
 
-  // Fire coordinator async — don't await, let it run in background
-  // TODO: replace stub with real coordinator call once built
-  void fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/coordinator`,
-    {
+    void fetch(`${BASE}/api/coordinator`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ taskId, task: parsed, userWallet, insurance }),
-    }
-  ).catch(() => {
-    // coordinator not built yet — silent until P1's handoff
-  });
+      body: JSON.stringify({ taskId: task.id, task: parsed, userWallet, insurance }),
+    }).catch(console.error);
 
-  return Response.json({ taskId, task: parsed });
+    return Response.json({ taskId: task.id, task: parsed });
+  } catch (err) {
+    return Response.json({ error: String(err) }, { status: 500 });
+  }
 }
