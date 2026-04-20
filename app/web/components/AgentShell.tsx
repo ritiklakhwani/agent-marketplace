@@ -69,7 +69,7 @@ export function AgentShell({ agent }: AgentShellProps) {
 
         {!publicKey ? (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-            Wallet not connected — running in mock mode. Connect Phantom to use the real backend.
+            Wallet not connected — showing a UI preview. Connect your wallet to run the live on-chain flow.
           </div>
         ) : null}
 

@@ -53,8 +53,17 @@ export function StatusPanel({ taskId, isRunning, events }: StatusPanelProps) {
 
         {refundEvent ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            Insurance refund queued: ${refundEvent.amount.toFixed(2)}{" "}
-            {refundEvent.txSig ? `(${refundEvent.txSig})` : ""}
+            Insurance refund confirmed on-chain: ${refundEvent.amount.toFixed(2)}{" "}
+            {refundEvent.txSig ? (
+              <a
+                href={`https://explorer.solana.com/tx/${refundEvent.txSig}?cluster=devnet`}
+                target="_blank"
+                rel="noreferrer"
+                className="ml-1 font-mono text-xs underline hover:text-emerald-900"
+              >
+                {refundEvent.txSig.slice(0, 8)}…{refundEvent.txSig.slice(-4)}
+              </a>
+            ) : null}
           </div>
         ) : null}
       </div>

@@ -26,7 +26,7 @@ export const agents: AgentConfig[] = [
       "Run the flagship rebalance flow with live bidding, composition, and insurance.",
     promptPlaceholder: "Maintain 40% AAPL, 30% TSLA, 30% NVDA with $500",
     mode: "auction",
-    detailBadge: "xStocks mock path",
+    detailBadge: "Devnet · xStocks preview",
   },
   {
     slug: "remittance-agent",

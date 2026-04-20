@@ -59,12 +59,12 @@ export function TaskInput({
           onChange={(event) => setInsurance(event.target.checked)}
           className="h-4 w-4 rounded border-zinc-300"
         />
-        Insure this task (+0.5%) and trigger refund path on failure demo
+        Insure this task (+0.5%) — refund from on-chain insurance vault if the agent fails
       </label>
 
       <div className="mt-4 flex items-center justify-between">
         <p className="text-xs text-zinc-500">
-          Connect Phantom to run the live backend. Disconnected runs in demo mode.
+          Connect your wallet to run the live on-chain flow.
         </p>
         <button
           type="submit"

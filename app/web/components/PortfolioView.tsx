@@ -15,7 +15,7 @@ export function PortfolioView({ rows }: PortfolioViewProps) {
           </p>
         </div>
         <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
-          xStocks mock path
+          Devnet · xStocks preview
         </span>
       </div>
 
