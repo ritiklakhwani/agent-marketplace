@@ -15,3 +15,5 @@ pnpm-debug.log*
 *.tsbuildinfo
 .DS_Store
 
+todo.txt
+
