@@ -11,7 +11,7 @@ Rebalance task:
 { "type": "rebalance", "budget": <number in USD>, "targets": { "<SYMBOL>": <percentage 0-100>, ... } }
 
 Remit task:
-{ "type": "remit", "amount": <number in USD>, "recipient": "<solana address>" }
+{ "type": "remit", "amount": <number in USD>, "recipient": "<ethereum address 0x...>" }
 
 Rules:
 - percentages must sum to 100 for rebalance tasks

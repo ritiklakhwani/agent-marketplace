@@ -1,8 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import {
-  AGENT_HOT_WALLET,
-  getConnection,
-} from "@agentbazaar/solana";
+import { AGENT_HOT_WALLET, getConnection } from "@agentbazaar/solana";
 import { makeX402Payment } from "@agentbazaar/x402";
 import { PublicKey } from "@solana/web3.js";
 import type { Task } from "@agent-marketplace/types";
@@ -13,7 +10,10 @@ const FALLBACK = "11111111111111111111111111111111";
 const REMIT_PUBKEY = new PublicKey(process.env.AGENT_REMIT_PUBKEY ?? FALLBACK);
 const USDC_MINT = new PublicKey(process.env.USDC_DEVNET_MINT ?? FALLBACK);
 
-// Mirrors REMIT_FEE_MICRO_USDC in /api/agents/remit/route.ts
+// Service fee the user pays Remit Agent (via SPL delegation) before the agent
+// executes the Circle CCTP burn+mint using its own balance. The remit route
+// itself doesn't currently verify this x402 header, but including it keeps the
+// Explorer trail consistent with other agent-marketplace interactions.
 const REMIT_FEE_MICRO_USDC = 10_000n; // 0.01 USDC
 
 async function callRouter(prompt: string): Promise<Task> {
@@ -41,13 +41,13 @@ async function dispatchRebalance(params: {
 
 async function dispatchRemit(params: {
   taskId: string;
-  amount: number;
-  recipient: string;
+  task: Task;
   userWallet?: string;
 }) {
-  // User pays Remit Agent via x402 using SPL delegation — hot wallet signs
-  // as delegate, user's USDC is the actual source. Falls back to direct
-  // hot-wallet payment if the user hasn't delegated (dev flow).
+  // User pays Remit Agent a small service fee via SPL delegation. The remit
+  // route performs the CCTP burn+mint itself; this header documents "user
+  // commissioned agent" on the Explorer trail. Non-fatal if payment fails
+  // (e.g., user hasn't approved delegation) — the remit route doesn't verify.
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   let userPubkey: PublicKey | null = null;
   if (params.userWallet) {
@@ -68,30 +68,14 @@ async function dispatchRemit(params: {
     });
     headers["X-PAYMENT"] = x402;
   } catch (e) {
-    console.error("[tasks] delegated x402 for remit failed:", e);
-    try {
-      const fallback = await makeX402Payment({
-        signer: AGENT_HOT_WALLET,
-        recipient: REMIT_PUBKEY,
-        amount: REMIT_FEE_MICRO_USDC,
-        mint: USDC_MINT,
-        connection: getConnection(),
-      });
-      headers["X-PAYMENT"] = fallback;
-      console.warn("[tasks] falling back to direct hot-wallet payment for remit");
-    } catch (fallbackErr) {
-      console.error("[tasks] fallback remit payment also failed:", fallbackErr);
-    }
+    console.error("[tasks] remit x402 service fee failed (non-fatal):", e);
+    // Continue without header — remit route doesn't gate on payment.
   }
 
   void fetch(`${BASE}/api/agents/remit`, {
     method: "POST",
     headers,
-    body: JSON.stringify({
-      taskId: params.taskId,
-      amount: params.amount,
-      recipient: params.recipient,
-    }),
+    body: JSON.stringify({ taskId: params.taskId, task: params.task }),
   }).catch(console.error);
 }
 
@@ -124,8 +108,7 @@ export async function POST(request: Request) {
     } else if (parsed.type === "remit") {
       await dispatchRemit({
         taskId: task.id,
-        amount: parsed.amount,
-        recipient: parsed.recipient,
+        task: parsed,
         userWallet,
       });
     } else {
