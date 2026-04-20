@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Task {
+  id         String   @id @default(cuid())
+  userWallet String
+  type       String   // "rebalance" | "remit"
+  payload    Json
+  status     String   @default("pending") // pending | bidding | executing | completed | failed | refunded
+  winnerId   String?
+  insurance  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  bids   Bid[]
+  steps  ExecutionStep[]
+  events InsuranceEvent[]
+}
+
+model Bid {
+  id         String   @id @default(cuid())
+  taskId     String
+  agentId    String   // "portfolio-a" | "portfolio-b"
+  feePct     Float
+  reputation Int
+  createdAt  DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id])
+}
+
+model ExecutionStep {
+  id        String   @id @default(cuid())
+  taskId    String
+  stepIndex Int
+  agentId   String
+  action    String   // "oracle_query" | "swap_leg"
+  input     Json
+  output    Json?
+  status    String   // "pending" | "complete" | "failed"
+  txSig     String?
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id])
+}
+
+model InsuranceEvent {
+  id        String   @id @default(cuid())
+  taskId    String
+  type      String   // "opted_in" | "triggered" | "refunded" | "slashed"
+  amount    Float?
+  txSig     String?
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id])
+}
+
+model RemitEvent {
+  id        String   @id @default(cuid())
+  taskId    String
+  amount    Float
+  recipient String
+  txSig     String?
+  status    String
+  createdAt DateTime @default(now())
+}
+
+model AgentMetadata {
+  id          String  @id // "portfolio-a" | "portfolio-b" | "oracle" | "swap" | "remit"
+  name        String
+  category    String
+  endpoint    String
+  pubkey      String
+  description String?
+}
