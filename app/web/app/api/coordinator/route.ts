@@ -1,10 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { emitSSE } from "@/lib/sse";
-import { readReputation } from "@agentbazaar/solana";
+import { AGENT_HOT_WALLET, getConnection, readReputation } from "@agentbazaar/solana";
+import { makeX402Payment } from "@agentbazaar/x402";
 import { PublicKey } from "@solana/web3.js";
 import { Task } from "@agent-marketplace/types";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const USDC_MINT = new PublicKey(
+  process.env.USDC_DEVNET_MINT ?? "11111111111111111111111111111111",
+);
+
+// Must match EXECUTE_FEE_MICRO_USDC in portfolio-{a,b}/execute routes.
+// V0: Coordinator signs this payment on behalf of the user using AGENT_HOT_WALLET.
+// V1: frontend prompts the user's Backpack to sign this header themselves.
+const EXECUTE_FEE_MICRO_USDC = 1_000_000n; // 1 USDC
 
 // On-chain pubkeys for each agent — sourced from AgentMetadata seed
 const AGENT_PUBKEYS: Record<string, string> = {
@@ -29,6 +38,14 @@ async function fetchBidConfig(agentId: string): Promise<BidConfig> {
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function safePubkey(input: string): PublicKey | null {
+  try {
+    return new PublicKey(input);
+  } catch {
+    return null;
+  }
 }
 
 // Simulates a Dutch auction: A drops from initial to floor over 3 rounds
@@ -115,10 +132,57 @@ export async function POST(request: Request) {
     reason: `Lowest fee × reputation score: ${winnerScore.toFixed(4)}`,
   });
 
+  // Coordinator uses SPL token delegation to pay the winning agent on behalf
+  // of the user. The user previously signed `approve(delegate=AGENT_HOT_WALLET)`
+  // granting us authority to move up to N USDC from their wallet. Here we
+  // spend 1 USDC of that delegation per task — USDC leaves the user's wallet
+  // on-chain (Explorer shows user -> agent), while the tx + x402 envelope are
+  // signed by AGENT_HOT_WALLET as the delegate.
+  //
+  // If the user never called approve, this transfer will fail with
+  // "owner does not match" — graceful fallback: sign as hot wallet directly
+  // (no delegation), so dev / admin-wallet flows still work.
+  const executeHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const winnerPubkeyStr = AGENT_PUBKEYS[winner];
+  if (winnerPubkeyStr) {
+    const winnerPubkey = new PublicKey(winnerPubkeyStr);
+    const userPubkey = userWallet ? safePubkey(userWallet) : null;
+    try {
+      const x402 = await makeX402Payment({
+        signer: AGENT_HOT_WALLET,
+        sourceOwner: userPubkey ?? undefined,
+        recipient: winnerPubkey,
+        amount: EXECUTE_FEE_MICRO_USDC,
+        mint: USDC_MINT,
+        connection: getConnection(),
+      });
+      executeHeaders["X-PAYMENT"] = x402;
+    } catch (e) {
+      console.error("[coordinator] delegated x402 payment failed:", e);
+      // Fallback for dev: try signing without delegation (pay from hot wallet).
+      try {
+        const fallback = await makeX402Payment({
+          signer: AGENT_HOT_WALLET,
+          recipient: winnerPubkey,
+          amount: EXECUTE_FEE_MICRO_USDC,
+          mint: USDC_MINT,
+          connection: getConnection(),
+        });
+        executeHeaders["X-PAYMENT"] = fallback;
+        console.warn("[coordinator] falling back to direct hot-wallet payment (no delegation)");
+      } catch (fallbackErr) {
+        console.error("[coordinator] fallback payment also failed:", fallbackErr);
+        // Execute will 402 and task ends in failed state.
+      }
+    }
+  }
+
   // Trigger winner execute — fire and forget
   void fetch(`${BASE}/api/agents/${winner}/execute`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: executeHeaders,
     body: JSON.stringify({ taskId, task, userWallet, insurance }),
   }).catch(console.error);
 

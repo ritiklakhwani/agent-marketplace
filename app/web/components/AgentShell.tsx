@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletButton } from "@/components/WalletButton";
+import { ApproveDelegation } from "@/components/ApproveDelegation";
 import { AuctionTicker } from "@/components/AuctionTicker";
 import { CompositionChain } from "@/components/CompositionChain";
 import { AgentOverview } from "@/components/AgentOverview";
@@ -74,6 +75,7 @@ export function AgentShell({ agent }: AgentShellProps) {
 
         <section className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
+            {publicKey ? <ApproveDelegation /> : null}
             <TaskInput
               isRunning={isRunning}
               defaultPrompt={agent.promptPlaceholder}

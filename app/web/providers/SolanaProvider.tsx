@@ -14,6 +14,9 @@ export function SolanaProvider({ children }: PropsWithChildren) {
   const endpoint =
     process.env.NEXT_PUBLIC_SOLANA_RPC?.trim() || DEFAULT_RPC;
 
+  // Backpack is a Wallet Standard compliant wallet and is auto-detected by
+  // @solana/wallet-adapter-react at runtime — no explicit adapter needed.
+  // Phantom predates Wallet Standard so still needs its legacy adapter here.
   const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
 
   return (

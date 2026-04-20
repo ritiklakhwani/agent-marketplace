@@ -1,3 +1,6 @@
+"use client";
+
+import { motion, AnimatePresence } from "framer-motion";
 import type { TaskEvent, BidEvent, WinnerSelectedEvent } from "@agent-marketplace/types";
 
 type AuctionTickerProps = {
@@ -27,11 +30,20 @@ export function AuctionTicker({ events }: AuctionTickerProps) {
             Live Dutch auction — bids stream via SSE from the coordinator.
           </p>
         </div>
-        {winnerEvent ? (
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-            {AGENT_LABELS[winnerEvent.winner] ?? winnerEvent.winner} selected
-          </span>
-        ) : null}
+        <AnimatePresence>
+          {winnerEvent ? (
+            <motion.span
+              key="winner-badge"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700"
+            >
+              {AGENT_LABELS[winnerEvent.winner] ?? winnerEvent.winner} selected
+            </motion.span>
+          ) : null}
+        </AnimatePresence>
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -39,30 +51,44 @@ export function AuctionTicker({ events }: AuctionTickerProps) {
           const isWinner =
             winnerEvent?.type === "winner_selected" &&
             winnerEvent.winner === agentId;
+          const currentBid = latestByAgent[agentId];
 
           return (
-            <div
+            <motion.div
               key={agentId}
-              className={`rounded-2xl border p-4 transition ${
-                isWinner
-                  ? "border-emerald-300 bg-emerald-50"
-                  : "border-zinc-200 bg-zinc-50"
-              }`}
+              layout
+              animate={{
+                borderColor: isWinner ? "#6ee7b7" : "#e4e4e7",
+                backgroundColor: isWinner ? "#ecfdf5" : "#fafafa",
+              }}
+              transition={{ duration: 0.4 }}
+              className="rounded-2xl border p-4"
             >
               <p className="text-sm font-semibold text-zinc-900">
                 {AGENT_LABELS[agentId]}
               </p>
-              <p className="mt-2 text-3xl font-semibold text-zinc-900">
-                {latestByAgent[agentId] !== undefined
-                  ? `${latestByAgent[agentId].toFixed(1)}%`
-                  : "--"}
-              </p>
+
+              <div className="mt-2 h-10 overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={`${agentId}-${currentBid ?? "waiting"}`}
+                    initial={{ y: 20, opacity: 0, scale: 1.15, color: "#10b981" }}
+                    animate={{ y: 0, opacity: 1, scale: 1, color: "#18181b" }}
+                    exit={{ y: -20, opacity: 0 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    className="text-3xl font-semibold"
+                  >
+                    {currentBid !== undefined ? `${currentBid.toFixed(1)}%` : "--"}
+                  </motion.p>
+                </AnimatePresence>
+              </div>
+
               <p className="mt-2 text-sm text-zinc-500">
                 {isWinner
                   ? winnerEvent.reason
                   : "Waiting for the next bid event"}
               </p>
-            </div>
+            </motion.div>
           );
         })}
       </div>

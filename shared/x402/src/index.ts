@@ -65,6 +65,12 @@ export interface MakeX402PaymentParams {
   amount: bigint; // micro-USDC
   mint: PublicKey; // USDC mint (devnet `4zMMC9...`)
   connection: Connection;
+  // Optional: when set, the transfer pulls tokens from this wallet's ATA
+  // using `signer` as an SPL token delegate. `signer` still signs the tx
+  // and the x402 envelope, but the actual USDC source on-chain is
+  // `sourceOwner`. Requires `sourceOwner` to have previously called
+  // `approve(delegate=signer.publicKey, amount>=amount)`.
+  sourceOwner?: PublicKey;
   waitForConfirmation?: boolean; // default false (Path A+)
 }
 
@@ -72,13 +78,19 @@ export interface MakeX402PaymentParams {
  * Submits a USDC SPL transfer and returns a base64-encoded X-PAYMENT header.
  * Does NOT wait for on-chain confirmation by default — returns as soon as the
  * transaction is submitted and has a signature.
+ *
+ * When `sourceOwner` is provided, this builds a delegated transfer: tokens
+ * flow from `sourceOwner`'s ATA (not `signer`'s), authorized by `signer`
+ * acting as the SPL token delegate. Explorer attributes the USDC outflow
+ * to `sourceOwner`'s wallet.
  */
 export async function makeX402Payment(
   params: MakeX402PaymentParams,
 ): Promise<string> {
-  const { signer, recipient, amount, mint, connection } = params;
+  const { signer, recipient, amount, mint, connection, sourceOwner } = params;
 
-  const payerAta = await getAssociatedTokenAddress(mint, signer.publicKey);
+  const effectiveSourceOwner = sourceOwner ?? signer.publicKey;
+  const payerAta = await getAssociatedTokenAddress(mint, effectiveSourceOwner);
   const recipientAta = await getAssociatedTokenAddress(mint, recipient);
 
   const tx = new Transaction().add(
@@ -91,7 +103,7 @@ export async function makeX402Payment(
     createTransferInstruction(
       payerAta,
       recipientAta,
-      signer.publicKey,
+      signer.publicKey, // authority — either owner or delegate depending on sourceOwner
       amount,
     ),
   );

@@ -4,6 +4,7 @@ import { computeTrades, logStep } from "@/lib/portfolio-core";
 import { loadAgentKeypair } from "@/lib/agentKeypair";
 import { handleAgentFailure, incrementReputation, getConnection } from "@agentbazaar/solana";
 import { makeX402Payment } from "@agentbazaar/x402";
+import { withX402 } from "@agentbazaar/x402/next";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { RebalanceTask } from "@agent-marketplace/types";
@@ -12,10 +13,14 @@ const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const AGENT_ID = "portfolio-b";
 
 const FALLBACK = "11111111111111111111111111111111";
+const AGENT_B_PUBKEY = new PublicKey(process.env.PORTFOLIO_B_PUBKEY ?? FALLBACK);
 const ORACLE_PUBKEY = new PublicKey(process.env.AGENT_ORACLE_PUBKEY ?? FALLBACK);
 const SWAP_PUBKEY = new PublicKey(process.env.AGENT_SWAP_PUBKEY ?? FALLBACK);
 const USDC_MINT = new PublicKey(process.env.USDC_DEVNET_MINT ?? FALLBACK);
 
+// Flat demo fee the user (via Coordinator proxy) pays Portfolio B for the task.
+// Matches the amount the Coordinator signs before calling this route.
+const EXECUTE_FEE_MICRO_USDC = 1_000_000n; // 1 USDC
 
 async function x402Header(recipient: PublicKey, amount: bigint): Promise<Record<string, string>> {
   const keypair = loadAgentKeypair("portfolio-b");
@@ -24,7 +29,13 @@ async function x402Header(recipient: PublicKey, amount: bigint): Promise<Record<
   return { "X-PAYMENT": header };
 }
 
-export async function POST(request: Request) {
+export const POST = withX402(
+  {
+    expectedRecipient: AGENT_B_PUBKEY,
+    expectedAmount: EXECUTE_FEE_MICRO_USDC,
+    expectedMint: USDC_MINT,
+  },
+  async (request, _ctx, payment) => {
   const { taskId, task, userWallet, insurance } = (await request.json()) as {
     taskId: string;
     task: RebalanceTask;
@@ -33,6 +44,18 @@ export async function POST(request: Request) {
   };
 
   try {
+    // "User pays agent" moment — USDC flowed from user's wallet via SPL
+    // delegation. We label with userWallet (actual USDC source on-chain),
+    // not payment.payer (delegate signer).
+    const payerLabel = userWallet
+      ? `user ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`
+      : `${payment.payer.slice(0, 8)}... (delegate)`;
+    emitSSE(taskId, {
+      type: "execution_step",
+      stepIndex: -1,
+      label: `Portfolio B received 1 USDC from ${payerLabel}`,
+      status: "complete",
+    });
     // Step 0: hire Oracle Agent via x402
     const oracleRes = await fetch(`${BASE}/api/agents/oracle`, {
       method: "POST",
@@ -58,7 +81,7 @@ export async function POST(request: Request) {
       const swapRes = await fetch(`${BASE}/api/agents/swap`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...await x402Header(SWAP_PUBKEY, 50_000n) },
-        body: JSON.stringify(trade),
+        body: JSON.stringify({ ...trade, userWallet }),
       });
 
       if (!swapRes.ok) throw new Error(`Swap payment rejected: ${await swapRes.text()}`);
@@ -109,4 +132,5 @@ export async function POST(request: Request) {
     emitSSE(taskId, { type: "task_complete" });
     return Response.json({ error: String(taskErr) }, { status: 500 });
   }
-}
+  },
+);
