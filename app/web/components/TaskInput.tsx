@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
 
 type TaskInputProps = {
   onSubmit: (args: { prompt: string; insurance: boolean }) => void;
@@ -21,14 +21,9 @@ export function TaskInput({
   const [prompt, setPrompt] = useState(defaultPrompt);
   const [insurance, setInsurance] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    onSubmit({ prompt, insurance });
-  };
-
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={(e) => { e.preventDefault(); onSubmit({ prompt, insurance }); }}
       className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm"
     >
       <div className="flex items-center justify-between">
@@ -69,7 +64,7 @@ export function TaskInput({
 
       <div className="mt-4 flex items-center justify-between">
         <p className="text-xs text-zinc-500">
-          Current mode: mocked frontend flow until backend handoff lands.
+          Connect Phantom to run the live backend. Disconnected runs in demo mode.
         </p>
         <button
           type="submit"
@@ -79,8 +74,8 @@ export function TaskInput({
           {isRunning
             ? "Running..."
             : shellMode === "auction"
-            ? "Start Mock Swap Flow"
-            : "Start Mock Remittance Flow"}
+            ? "Start Rebalance"
+            : "Start Remittance"}
         </button>
       </div>
     </form>

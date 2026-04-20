@@ -1,4 +1,4 @@
-import { TaskEvent } from "@agent-marketplace/types";
+import type { TaskEvent, ReputationUpdateEvent, InsuranceRefundEvent } from "@agent-marketplace/types";
 
 type StatusPanelProps = {
   taskId: string | null;
@@ -7,12 +7,8 @@ type StatusPanelProps = {
 };
 
 export function StatusPanel({ taskId, isRunning, events }: StatusPanelProps) {
-  const reputationEvents = events.filter(
-    (event) => event.type === "reputation_update"
-  );
-  const refundEvent = events.find(
-    (event) => event.type === "insurance_refund"
-  );
+  const reputationEvents = events.filter((e): e is ReputationUpdateEvent => e.type === "reputation_update");
+  const refundEvent = events.find((e): e is InsuranceRefundEvent => e.type === "insurance_refund");
 
   return (
     <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">

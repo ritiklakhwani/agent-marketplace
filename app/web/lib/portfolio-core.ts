@@ -7,12 +7,14 @@ export type PriceMap = Record<string, number>; // { AAPL: 182.5, ... }
 export type Trade = {
   symbol: string;
   amountUsd: number; // dollars to spend on this asset
+  price: number;     // oracle price at time of execution
 };
 
-export function computeTrades(task: RebalanceTask, _prices: PriceMap): Trade[] {
+export function computeTrades(task: RebalanceTask, prices: PriceMap): Trade[] {
   return Object.entries(task.targets).map(([symbol, targetPct]) => ({
     symbol,
     amountUsd: (targetPct / 100) * task.budget,
+    price: prices[symbol] ?? 0,
   }));
 }
 

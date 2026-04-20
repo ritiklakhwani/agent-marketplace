@@ -19,14 +19,14 @@ export function CompositionChain({ events }: CompositionChainProps) {
           </p>
         </div>
         <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
-          x402 edges visible later
+          x402 payments on each edge
         </span>
       </div>
 
       <div className="mt-4 space-y-3">
         {steps.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-zinc-300 px-4 py-6 text-sm text-zinc-500">
-            No execution steps yet. Start a mock task to see the chain animate.
+            No execution steps yet. Start a task to see the agent chain.
           </p>
         ) : null}
 

@@ -81,7 +81,8 @@ export async function POST(request: Request) {
     try {
       const pubkeyStr = process.env.PORTFOLIO_B_PUBKEY;
       if (pubkeyStr) {
-        const refundAmount = BigInt(Math.round(task.budget * 1.005 * 1_000_000));
+        const premiumAmount = task.budget * 0.005;
+        const refundAmount = BigInt(Math.round(premiumAmount * 1_000_000));
         const userAta = await getAssociatedTokenAddress(USDC_MINT, new PublicKey(userWallet));
         const result = await handleAgentFailure({
           taskId,
@@ -93,9 +94,9 @@ export async function POST(request: Request) {
 
         if (insurance && result.refundTxSig) {
           await prisma.insuranceEvent.create({
-            data: { taskId, type: "refunded", amount: task.budget * 1.005, txSig: result.refundTxSig },
+            data: { taskId, type: "refunded", amount: premiumAmount, txSig: result.refundTxSig },
           });
-          emitSSE(taskId, { type: "insurance_refund", amount: task.budget * 1.005, txSig: result.refundTxSig });
+          emitSSE(taskId, { type: "insurance_refund", amount: premiumAmount, txSig: result.refundTxSig });
         }
 
         emitSSE(taskId, { type: "reputation_update", agent: AGENT_ID, delta: -1 });

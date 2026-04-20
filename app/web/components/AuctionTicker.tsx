@@ -1,4 +1,4 @@
-import { TaskEvent } from "@agent-marketplace/types";
+import type { TaskEvent, BidEvent, WinnerSelectedEvent } from "@agent-marketplace/types";
 
 type AuctionTickerProps = {
   events: TaskEvent[];
@@ -10,10 +10,8 @@ const AGENT_LABELS: Record<string, string> = {
 };
 
 export function AuctionTicker({ events }: AuctionTickerProps) {
-  const bids = events.filter((event) => event.type === "bid");
-  const winnerEvent = events.find(
-    (event) => event.type === "winner_selected"
-  );
+  const bids = events.filter((e): e is BidEvent => e.type === "bid");
+  const winnerEvent = events.find((e): e is WinnerSelectedEvent => e.type === "winner_selected");
 
   const latestByAgent = bids.reduce<Record<string, number>>((acc, bid) => {
     acc[bid.agent] = bid.feePct;
@@ -26,7 +24,7 @@ export function AuctionTicker({ events }: AuctionTickerProps) {
         <div>
           <p className="text-sm font-semibold text-zinc-900">Live Auction</p>
           <p className="text-sm text-zinc-500">
-            Mocked SSE events now, real coordinator later.
+            Live Dutch auction — bids stream via SSE from the coordinator.
           </p>
         </div>
         {winnerEvent ? (

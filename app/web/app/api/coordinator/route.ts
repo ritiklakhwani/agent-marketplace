@@ -99,8 +99,8 @@ export async function POST(request: Request) {
   }
 
   // Pick winner: lowest fee/reputation wins — insured tasks route to portfolio-b to demo the failure+refund flow
-  const scoreA = configA.floorFeePct / configA.reputation;
-  const scoreB = configB.floorFeePct / configB.reputation;
+  const scoreA = configA.floorFeePct / (configA.reputation || 1);
+  const scoreB = configB.floorFeePct / (configB.reputation || 1);
   const winner = insurance ? "portfolio-b" : (scoreA <= scoreB ? "portfolio-a" : "portfolio-b");
   const winnerScore = winner === "portfolio-a" ? scoreA : scoreB;
 

@@ -54,6 +54,7 @@ export function createMockTaskEvents(
   const baseEvents: TaskEvent[] = [
     { type: "bid", agent: "portfolio-a", feePct: 0.6 },
     { type: "bid", agent: "portfolio-b", feePct: 0.4 },
+    { type: "bid", agent: "portfolio-a", feePct: 0.45 },
     { type: "bid", agent: "portfolio-a", feePct: 0.3 },
     {
       type: "winner_selected",
