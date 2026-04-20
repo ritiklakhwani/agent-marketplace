@@ -11,6 +11,9 @@ importers:
       '@agentbazaar/solana':
         specifier: workspace:*
         version: link:shared/solana
+      '@agentbazaar/x402':
+        specifier: workspace:*
+        version: link:shared/x402
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -110,6 +113,25 @@ importers:
       zod:
         specifier: ^4.1.12
         version: 4.3.6
+
+  shared/x402:
+    dependencies:
+      '@solana/spl-token':
+        specifier: ^0.4.9
+        version: 0.4.14(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/web3.js':
+        specifier: ^1.98.0
+        version: 1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      tweetnacl:
+        specifier: ^1.0.3
+        version: 1.0.3
+    devDependencies:
+      '@types/node':
+        specifier: ^20.12.0
+        version: 20.19.39
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
 
 packages:
 
@@ -4851,6 +4873,9 @@ packages:
     resolution: {integrity: sha512-5C1sg4USs1lfG0GFb2RLXsdpXqBSEhAaA/0kPL01wxzpMqLILNxIxIOKiILz+cdg/pLnOUxFYOR5yhHU666wbw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
+
+  tweetnacl@1.0.3:
+    resolution: {integrity: sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -11749,6 +11774,8 @@ snapshots:
       get-tsconfig: 4.14.0
     optionalDependencies:
       fsevents: 2.3.3
+
+  tweetnacl@1.0.3: {}
 
   type-check@0.4.0:
     dependencies:

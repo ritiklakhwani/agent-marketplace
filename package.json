@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@agentbazaar/solana": "workspace:*",
+    "@agentbazaar/x402": "workspace:*",
     "dotenv": "^17.4.2"
   }
 }
