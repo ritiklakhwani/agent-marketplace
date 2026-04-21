@@ -4,55 +4,54 @@ type AgentOverviewProps = {
   agent: AgentConfig;
 };
 
+const B = "rgba(0,0,0,0.08)";
+
 export function AgentOverview({ agent }: AgentOverviewProps) {
   const content =
     agent.slug === "swap-agent"
       ? {
           title: "Portfolio Context",
-          subtitle:
-            "Current vs target allocation for the flagship rebalance demo.",
+          subtitle: "Flagship rebalance demo",
           rows: [
-            ["Target", "40% AAPL • 30% TSLA • 30% NVDA"],
-            ["Current", "100% cash before execution"],
+            ["Target",    "40% AAPL · 30% TSLA · 30% NVDA"],
+            ["Starting",  "100% cash"],
             ["Execution", "Oracle quote + 3 swap legs"],
           ],
         }
       : {
           title: "Transfer Context",
-          subtitle:
-            "Simple remittance shell for V0 with a path to real rails in Frontier.",
+          subtitle: "Circle CCTP V2 cross-chain",
           rows: [
-            ["Asset", "Devnet USDC"],
-            ["Route", "Wallet to wallet on Solana"],
-            ["V1 upgrade", "Dodo-backed INR settlement"],
+            ["Asset",    "Devnet USDC"],
+            ["Route",    "Solana → Ethereum via CCTP V2"],
+            ["V1",       "Dodo-backed INR settlement"],
           ],
         };
 
   return (
-    <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-zinc-900">
-            {content.title}
-          </p>
-          <p className="text-sm text-zinc-500">{content.subtitle}</p>
+    <section className="shrink-0 flex flex-col" style={{ borderBottom: `1px solid ${B}` }}>
+      <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: `1px solid ${B}` }}>
+        <div className="flex items-center gap-3">
+          <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-tertiary">{content.title}</p>
+          <p className="text-[10px] text-text-tertiary">{content.subtitle}</p>
         </div>
-        <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
+        <span className="text-[10px] font-medium px-2 py-0.5" style={{ background: "rgba(14,165,233,0.08)", color: "#0284c7" }}>
           {agent.detailBadge}
         </span>
       </div>
 
-      <div className="mt-4 space-y-3">
-        {content.rows.map(([label, value]) => (
-          <div
-            key={label}
-            className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3"
-          >
-            <span className="text-sm font-medium text-zinc-700">{label}</span>
-            <span className="text-sm text-zinc-900">{value}</span>
-          </div>
-        ))}
-      </div>
+      {content.rows.map(([label, value]) => (
+        <div
+          key={label}
+          className="flex items-center px-4 py-2.5 transition-colors duration-100"
+          style={{ borderBottom: `1px solid ${B}` }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.02)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+        >
+          <span className="w-24 shrink-0 text-[10px] font-medium uppercase tracking-[0.08em] text-text-tertiary">{label}</span>
+          <span className="text-[11px] text-text-primary">{value}</span>
+        </div>
+      ))}
     </section>
   );
 }

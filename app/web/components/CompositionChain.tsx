@@ -4,55 +4,57 @@ type CompositionChainProps = {
   events: TaskEvent[];
 };
 
+const B = "rgba(0,0,0,0.08)";
+
 export function CompositionChain({ events }: CompositionChainProps) {
-  const steps = events.filter((event) => event.type === "execution_step");
+  const steps = events.filter((e) => e.type === "execution_step");
 
   return (
-    <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-zinc-900">
-            Composition Chain
-          </p>
-          <p className="text-sm text-zinc-500">
-            Portfolio Agent hires Oracle, then Swap legs.
-          </p>
+    <section className="shrink-0 flex flex-col" style={{ borderBottom: `1px solid ${B}` }}>
+      <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: `1px solid ${B}` }}>
+        <div className="flex items-center gap-3">
+          <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-tertiary">Composition Chain</p>
+          <p className="text-[10px] text-text-tertiary">Portfolio → Oracle → Swap</p>
         </div>
-        <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
-          x402 payments on each edge
+        <span className="text-[10px] font-medium px-2 py-0.5" style={{ background: "rgba(139,92,246,0.08)", color: "#7c3aed" }}>
+          x402 on each edge
         </span>
       </div>
 
-      <div className="mt-4 space-y-3">
-        {steps.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-zinc-300 px-4 py-6 text-sm text-zinc-500">
-            No execution steps yet. Start a task to see the agent chain.
-          </p>
-        ) : null}
-
-        {steps.map((step) => (
+      {steps.length === 0 ? (
+        <div className="px-4 py-6 flex items-center justify-center">
+          <p className="text-[11px] text-text-tertiary">No steps yet — start a task to see the chain.</p>
+        </div>
+      ) : (
+        steps.map((step) => (
           <div
             key={`${step.stepIndex}-${step.label}`}
-            className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3"
+            className="flex items-center justify-between px-4 py-2.5 transition-colors duration-100"
+            style={{ borderBottom: `1px solid ${B}` }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.02)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
-            <div>
-              <p className="text-sm font-medium text-zinc-900">{step.label}</p>
-              <p className="text-xs text-zinc-500">Step {step.stepIndex + 1}</p>
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-mono text-text-tertiary tabular-nums">
+                {String(step.stepIndex + 1).padStart(2, "0")}
+              </span>
+              <span className="text-[11px] font-medium text-text-primary">{step.label}</span>
             </div>
             <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
+              className="text-[10px] font-medium px-2 py-0.5"
+              style={
                 step.status === "complete"
-                  ? "bg-emerald-50 text-emerald-700"
+                  ? { background: "var(--color-positive-dim)", color: "var(--color-positive)" }
                   : step.status === "failed"
-                  ? "bg-rose-50 text-rose-700"
-                  : "bg-amber-50 text-amber-700"
-              }`}
+                  ? { background: "var(--color-negative-dim)", color: "var(--color-negative)" }
+                  : { background: "rgba(202,138,4,0.08)", color: "#92400e" }
+              }
             >
               {step.status}
             </span>
           </div>
-        ))}
-      </div>
+        ))
+      )}
     </section>
   );
 }
