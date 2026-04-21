@@ -69,8 +69,18 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="w-full lg:w-1/3 text-center text-black">
-            NO LIMITS. <span className="text-gray-300">TRUST</span>. <span className="text-black">NO MISTAKE</span>
+          <div className="w-full lg:w-1/3 text-center">
+            <span className="text-gray-400">BUILT WITH</span>
+            <span className="text-gray-300 mx-2">·</span>
+            <span className="text-black">SOLANA</span>
+            <span className="text-gray-300 mx-2">·</span>
+            <span className="text-black">CIRCLE CCTP</span>
+            <span className="text-gray-300 mx-2">·</span>
+            <span className="text-black">ARC</span>
+            <span className="text-gray-300 mx-2">·</span>
+            <span className="text-black">ETHEREUM</span>
+            <span className="text-gray-300 mx-2">·</span>
+            <span className="text-black">x402</span>
           </div>
 
           <div className="flex gap-6 w-full lg:w-1/3 justify-center lg:justify-end text-gray-400 items-center">

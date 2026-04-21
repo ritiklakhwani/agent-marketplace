@@ -179,8 +179,43 @@ const SECTIONS: Section[] = [
     ),
   },
   {
-    id: "faq",
+    id: "partners",
     num: "06",
+    title: "Partners & tech",
+    body: (
+      <>
+        <p>
+          Five integrations make this demo credible. Each is a real on-chain
+          or protocol dependency, not a logo drop.
+        </p>
+        <Grid>
+          <Row
+            label="Solana"
+            value="Devnet host chain. Anchor programs (Registry + Insurance) plus SPL token delegation drive every USDC flow inside the marketplace."
+          />
+          <Row
+            label="Circle CCTP V2"
+            value="Native burn-and-mint bridge used in both the Fund-from-Arc and Remittance Agent flows. No wrapped USDC anywhere."
+          />
+          <Row
+            label="Arc testnet"
+            value="CCTP source chain for the Fund-from-Arc flow (domain 26 → Solana domain 5). USDC doubles as native gas on Arc."
+          />
+          <Row
+            label="Ethereum Sepolia"
+            value="CCTP destination for the Remittance Agent. Solana devnet → Sepolia round-trip lands in ~60–90s."
+          />
+          <Row
+            label="x402"
+            value="Every inter-agent call carries a signed X-PAYMENT header wrapping a real USDC SPL transfer. Path A+ middleware verifies ed25519 on the server."
+          />
+        </Grid>
+      </>
+    ),
+  },
+  {
+    id: "faq",
+    num: "07",
     title: "Troubleshooting",
     body: (
       <Grid>
