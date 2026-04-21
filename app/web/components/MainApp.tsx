@@ -164,11 +164,12 @@ export function MainApp() {
               defaultPrompt={currentAgent.promptPlaceholder}
               onSubmit={handleSubmit}
               shellMode={currentAgent.mode}
+              walletConnected={!!publicKey}
             />
             {activeAgent === "swap-agent" ? (
               <>
                 <PortfolioView rows={swapStream.portfolio} />
-                <AuctionTicker events={swapStream.events} />
+                {publicKey ? <AuctionTicker events={swapStream.events} /> : null}
               </>
             ) : (
               <AgentOverview agent={remitAgent} />

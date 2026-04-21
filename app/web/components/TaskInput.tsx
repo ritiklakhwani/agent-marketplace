@@ -7,6 +7,7 @@ type TaskInputProps = {
   isRunning: boolean;
   defaultPrompt?: string;
   shellMode?: "auction" | "direct";
+  walletConnected?: boolean;
 };
 
 const DEFAULT_PROMPT = "Maintain 40% AAPL, 30% TSLA, 30% NVDA with $500";
@@ -17,6 +18,7 @@ export function TaskInput({
   isRunning,
   defaultPrompt = DEFAULT_PROMPT,
   shellMode = "auction",
+  walletConnected = true,
 }: TaskInputProps) {
   const [prompt,    setPrompt]    = useState(defaultPrompt);
   const [insurance, setInsurance] = useState(false);
@@ -70,12 +72,15 @@ export function TaskInput({
         )}
         <button
           type="submit"
-          disabled={isRunning}
-          className="text-[13px] font-medium px-6 py-2.5 border-none cursor-pointer transition-colors duration-150"
+          disabled={isRunning || !walletConnected}
+          title={!walletConnected ? "Connect your wallet to start" : undefined}
+          className="text-[13px] font-medium px-6 py-2.5 border-none transition-colors duration-150"
           style={
-            isRunning
-              ? { background: "rgba(0,0,0,0.05)", color: "#a1a1aa", cursor: "not-allowed" }
-              : { background: "#111111", color: "#ffffff" }
+            !walletConnected
+              ? { background: "rgba(0,0,0,0.04)", color: "#c4c4c7", cursor: "not-allowed" }
+              : isRunning
+                ? { background: "rgba(0,0,0,0.05)", color: "#a1a1aa", cursor: "not-allowed" }
+                : { background: "#111111", color: "#ffffff", cursor: "pointer" }
           }
         >
           {isRunning ? "Running…" : shellMode === "auction" ? "Start Rebalance" : "Start Remittance"}

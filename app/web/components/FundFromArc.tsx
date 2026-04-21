@@ -108,8 +108,6 @@ export function FundFromArc() {
     }
   };
 
-  if (!publicKey) return null;
-
   return (
     <section className="shrink-0 flex flex-col" style={{ borderBottom: `1px solid ${B}` }}>
       {/* Header row */}
@@ -157,12 +155,15 @@ export function FundFromArc() {
           </AnimatePresence>
           <button
             onClick={handleFund}
-            disabled={isRunning}
-            className="text-[12px] font-medium px-4 py-2 border-none cursor-pointer transition-colors duration-150"
+            disabled={isRunning || !publicKey}
+            title={!publicKey ? "Connect your wallet to fund from Arc" : undefined}
+            className="text-[12px] font-medium px-4 py-2 border-none transition-colors duration-150"
             style={
-              isRunning
-                ? { background: "rgba(0,0,0,0.05)", color: "#a1a1aa", cursor: "not-allowed" }
-                : { background: "#111111", color: "#ffffff" }
+              !publicKey
+                ? { background: "rgba(0,0,0,0.04)", color: "#c4c4c7", cursor: "not-allowed" }
+                : isRunning
+                  ? { background: "rgba(0,0,0,0.05)", color: "#a1a1aa", cursor: "not-allowed" }
+                  : { background: "#111111", color: "#ffffff", cursor: "pointer" }
             }
           >
             {isRunning ? "Bridging…" : `Fund ${DEFAULT_AMOUNT} USDC`}
