@@ -80,7 +80,17 @@ async function dispatchRemit(params: {
 }
 
 export async function POST(request: Request) {
-  const { prompt, userWallet, insurance } = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "invalid JSON" }, { status: 400 });
+  }
+  const { prompt, userWallet, insurance } = (body ?? {}) as {
+    prompt?: string;
+    userWallet?: string;
+    insurance?: boolean;
+  };
 
   if (!prompt || typeof prompt !== "string") {
     return Response.json({ error: "prompt is required" }, { status: 400 });

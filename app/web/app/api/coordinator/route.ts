@@ -174,7 +174,24 @@ export async function POST(request: Request) {
         console.warn("[coordinator] falling back to direct hot-wallet payment (no delegation)");
       } catch (fallbackErr) {
         console.error("[coordinator] fallback payment also failed:", fallbackErr);
-        // Execute will 402 and task ends in failed state.
+        // Both payment attempts failed. Mark task failed so the UI doesn't hang
+        // waiting for execute to run. Emit a failed execution_step (the UI
+        // derives failure state from this) and then the task_complete terminator.
+        await prisma.task.update({
+          where: { id: taskId },
+          data: { status: "failed" },
+        });
+        emitSSE(taskId, {
+          type: "execution_step",
+          stepIndex: 0,
+          label: "x402 payment authorization failed",
+          status: "failed",
+        });
+        emitSSE(taskId, { type: "task_complete" });
+        return Response.json(
+          { error: "x402 payment failed", winner },
+          { status: 500 },
+        );
       }
     }
   }

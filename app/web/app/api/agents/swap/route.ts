@@ -32,10 +32,16 @@ export const POST = withX402(
     expectedMint: USDC_MINT,
   },
   async (req, _ctx, payment) => {
-    const { symbol, amountUsd, price, userWallet } = (await req.json()) as {
-      symbol: string;
-      amountUsd: number;
-      price: number;
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return Response.json({ error: "invalid JSON" }, { status: 400 });
+    }
+    const { symbol, amountUsd, price, userWallet } = (body ?? {}) as {
+      symbol?: string;
+      amountUsd?: number;
+      price?: number;
       userWallet?: string;
     };
 
@@ -46,7 +52,7 @@ export const POST = withX402(
       );
     }
 
-    const tokenQty = price > 0 ? amountUsd / price : 0;
+    const tokenQty = price && price > 0 ? amountUsd / price : 0;
     const mintAddr = MOCK_MINTS[symbol.toUpperCase()];
 
     // Graceful degrade: if prerequisites missing, return a mock sig.
@@ -76,8 +82,17 @@ export const POST = withX402(
       );
     }
 
-    const mint = new PublicKey(mintAddr);
-    const userPubkey = new PublicKey(userWallet);
+    let mint: PublicKey;
+    let userPubkey: PublicKey;
+    try {
+      mint = new PublicKey(mintAddr);
+      userPubkey = new PublicKey(userWallet);
+    } catch {
+      return Response.json(
+        { error: "invalid mint or userWallet pubkey" },
+        { status: 400 },
+      );
+    }
     const connection = getConnection();
 
     const swapAta = await getAssociatedTokenAddress(

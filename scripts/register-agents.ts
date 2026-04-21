@@ -175,7 +175,7 @@ async function main() {
     await fundIfNeeded(connection, agentKp.publicKey);
 
     const endpoint = `${BASE_URL}${spec.endpointPath}`;
-    const { txSig, agentPda } = await registerAgent({
+    const { txSig } = await registerAgent({
       owner: agentKp,
       name: spec.name,
       endpoint,
@@ -196,7 +196,6 @@ async function main() {
     }
 
     upsertEnvLine(spec.envKey, agentKp.publicKey.toBase58());
-    void agentPda;
   }
 
   console.log("\nAll agents registered. Pubkeys written to .env.local");

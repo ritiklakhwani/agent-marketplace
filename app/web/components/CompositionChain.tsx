@@ -5,7 +5,15 @@ type CompositionChainProps = {
 };
 
 export function CompositionChain({ events }: CompositionChainProps) {
-  const steps = events.filter((event) => event.type === "execution_step");
+  // Routes emit each step twice (pending -> complete) with the same
+  // stepIndex+label. Collapse to the latest status per step so the UI shows
+  // one row that animates its badge from pending to complete/failed.
+  const stepsByKey = new Map<string, Extract<TaskEvent, { type: "execution_step" }>>();
+  for (const event of events) {
+    if (event.type !== "execution_step") continue;
+    stepsByKey.set(`${event.stepIndex}-${event.label}`, event);
+  }
+  const steps = Array.from(stepsByKey.values());
 
   return (
     <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">

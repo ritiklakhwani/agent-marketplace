@@ -35,11 +35,16 @@ export const POST = withX402(
     expectedMint: USDC_MINT,
   },
   async (request, _ctx, payment) => {
-  const { taskId, task, userWallet } = (await request.json()) as {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "invalid JSON" }, { status: 400 });
+  }
+  const { taskId, task, userWallet } = (body ?? {}) as {
     taskId: string;
     task: RebalanceTask;
     userWallet: string;
-    insurance: boolean;
   };
 
   try {

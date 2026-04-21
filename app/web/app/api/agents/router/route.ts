@@ -30,7 +30,13 @@ function extractJson(text: string): string {
 }
 
 export async function POST(request: Request) {
-  const { prompt } = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "invalid JSON" }, { status: 400 });
+  }
+  const { prompt } = (body ?? {}) as { prompt?: string };
 
   if (!prompt || typeof prompt !== "string") {
     return Response.json({ error: "prompt is required" }, { status: 400 });

@@ -18,6 +18,8 @@
   "dependencies": {
     "@agentbazaar/solana": "workspace:*",
     "@agentbazaar/x402": "workspace:*",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
     "dotenv": "^17.4.2"
   }
 }
