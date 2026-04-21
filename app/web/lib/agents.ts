@@ -38,7 +38,7 @@ export const agents: AgentConfig[] = [
       "Cross-chain USDC transfer via Circle CCTP V2: burn on Solana devnet, attest, mint on Ethereum Sepolia.",
     headline:
       "Burn USDC on Solana, get Circle attestation, mint on Ethereum — live CCTP V2 demo.",
-    promptPlaceholder: "Send $10 USDC to 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 on Ethereum",
+    promptPlaceholder: "Send 0.5 USDC to 0xaCc0ca11c439Eb028E23dc71340785a5e5993225",
     mode: "direct",
     detailBadge: "Circle CCTP V2",
   },
