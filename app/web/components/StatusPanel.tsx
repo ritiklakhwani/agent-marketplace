@@ -6,67 +6,69 @@ type StatusPanelProps = {
   events: TaskEvent[];
 };
 
+const B = "rgba(0,0,0,0.08)";
+
 export function StatusPanel({ taskId, isRunning, events }: StatusPanelProps) {
   const reputationEvents = events.filter((e): e is ReputationUpdateEvent => e.type === "reputation_update");
-  const refundEvent = events.find((e): e is InsuranceRefundEvent => e.type === "insurance_refund");
+  const refundEvent      = events.find( (e): e is InsuranceRefundEvent   => e.type === "insurance_refund");
+
+  const stats = [
+    { label: "Task ID", value: taskId ?? "—",               mono: true  },
+    { label: "Stream",  value: isRunning ? "Live" : "Idle",  mono: false },
+    { label: "Events",  value: String(events.length),        mono: true  },
+  ];
 
   return (
-    <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
-      <p className="text-sm font-semibold text-zinc-900">Task Status</p>
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">
-            Task Id
-          </p>
-          <p className="mt-2 text-sm font-medium text-zinc-900">
-            {taskId ?? "Not started"}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">
-            Stream
-          </p>
-          <p className="mt-2 text-sm font-medium text-zinc-900">
-            {isRunning ? "Streaming events" : "Idle"}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">
-            Events
-          </p>
-          <p className="mt-2 text-sm font-medium text-zinc-900">
-            {events.length}
-          </p>
-        </div>
+    <section className="shrink-0 flex flex-col" style={{ borderBottom: `1px solid ${B}` }}>
+      <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: `1px solid ${B}` }}>
+        <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-tertiary">Task Status</p>
+        {isRunning && (
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-positive live-dot" />
+            <span className="text-[10px] font-medium text-positive/80">Live</span>
+          </div>
+        )}
       </div>
 
-      <div className="mt-4 space-y-3">
-        {reputationEvents.map((event, index) => (
-          <div
-            key={`${event.agent}-${index}`}
-            className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700"
-          >
-            Reputation update: <strong>{event.agent}</strong>{" "}
-            {event.delta > 0 ? "improved" : "decreased"} by {event.delta}
+      <div className="grid grid-cols-3" style={{ borderBottom: `1px solid ${B}` }}>
+        {stats.map(({ label, value, mono }, idx) => (
+          <div key={label} className="px-4 py-3" style={idx < 2 ? { borderRight: `1px solid ${B}` } : {}}>
+            <p className="text-[9px] font-medium uppercase tracking-[0.08em] text-text-tertiary">{label}</p>
+            <p className={`mt-1 text-[11px] font-medium text-text-primary truncate ${mono ? "font-mono tabular-nums" : ""}`}>
+              {value}
+            </p>
           </div>
         ))}
-
-        {refundEvent ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            Insurance refund confirmed on-chain: ${refundEvent.amount.toFixed(2)}{" "}
-            {refundEvent.txSig ? (
-              <a
-                href={`https://explorer.solana.com/tx/${refundEvent.txSig}?cluster=devnet`}
-                target="_blank"
-                rel="noreferrer"
-                className="ml-1 font-mono text-xs underline hover:text-emerald-900"
-              >
-                {refundEvent.txSig.slice(0, 8)}…{refundEvent.txSig.slice(-4)}
-              </a>
-            ) : null}
-          </div>
-        ) : null}
       </div>
+
+      {reputationEvents.map((event, i) => (
+        <div
+          key={`${event.agent}-${i}`}
+          className="px-4 py-2.5 text-[11px] text-text-secondary"
+          style={{ borderBottom: `1px solid ${B}` }}
+        >
+          Rep: <span className="text-text-primary">{event.agent}</span>{" "}
+          {event.delta > 0 ? "↑" : "↓"}{Math.abs(event.delta)}
+        </div>
+      ))}
+
+      {refundEvent && (
+        <div
+          className="px-4 py-2.5 text-[11px] text-positive"
+          style={{ borderBottom: `1px solid ${B}`, background: "var(--color-positive-dim)" }}
+        >
+          Refund confirmed: ${refundEvent.amount.toFixed(2)}
+          {refundEvent.txSig && (
+            <a
+              href={`https://explorer.solana.com/tx/${refundEvent.txSig}?cluster=devnet`}
+              target="_blank" rel="noreferrer"
+              className="ml-2 font-mono text-[10px] opacity-60 underline hover:opacity-100"
+            >
+              {refundEvent.txSig.slice(0, 8)}…
+            </a>
+          )}
+        </div>
+      )}
     </section>
   );
 }

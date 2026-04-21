@@ -4,54 +4,55 @@ type PortfolioViewProps = {
   rows: PortfolioRow[];
 };
 
+const B = "rgba(0,0,0,0.08)";
+
 export function PortfolioView({ rows }: PortfolioViewProps) {
   return (
-    <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-zinc-900">Portfolio View</p>
-          <p className="text-sm text-zinc-500">
-            Current vs target allocation for the flagship demo.
-          </p>
+    <section className="shrink-0 flex flex-col" style={{ borderBottom: `1px solid ${B}` }}>
+      <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: `1px solid ${B}` }}>
+        <div className="flex items-center gap-3">
+          <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-tertiary">Portfolio</p>
+          <p className="text-[10px] text-text-tertiary">Current vs target</p>
         </div>
-        <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
-          Devnet · xStocks preview
+        <span className="text-[10px] font-medium px-2 py-0.5" style={{ background: "rgba(14,165,233,0.08)", color: "#0284c7" }}>
+          Devnet · xStocks
         </span>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-200">
-        <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-zinc-50 text-zinc-600">
-            <tr>
-              <th className="px-4 py-3 font-medium">Asset</th>
-              <th className="px-4 py-3 font-medium">Target %</th>
-              <th className="px-4 py-3 font-medium">Current %</th>
-              <th className="px-4 py-3 font-medium">Drift %</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const drift = row.target - row.current;
-
-              return (
-                <tr key={row.symbol} className="border-t border-zinc-200">
-                  <td className="px-4 py-3 font-medium text-zinc-900">
-                    {row.symbol}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700">{row.target}%</td>
-                  <td className="px-4 py-3 text-zinc-700">{row.current}%</td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                      {drift > 0 ? "+" : ""}
-                      {drift}%
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <table className="w-full border-collapse">
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${B}` }}>
+            {["Asset", "Target", "Current", "Drift"].map((h) => (
+              <th key={h} className="px-4 py-2 text-left text-[10px] font-medium uppercase tracking-[0.08em] text-text-tertiary">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const drift = row.target - row.current;
+            return (
+              <tr
+                key={row.symbol}
+                className="transition-colors duration-100"
+                style={{ borderBottom: `1px solid ${B}` }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.02)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <td className="px-4 py-2 text-[11px] font-semibold font-mono text-text-primary">{row.symbol}</td>
+                <td className="px-4 py-2 text-[11px] tabular-nums text-text-secondary">{row.target}%</td>
+                <td className="px-4 py-2 text-[11px] tabular-nums text-text-secondary">{row.current}%</td>
+                <td className="px-4 py-2">
+                  <span className="text-[10px] font-medium tabular-nums px-1.5 py-0.5" style={{ background: "rgba(202,138,4,0.10)", color: "#92400e" }}>
+                    {drift > 0 ? "+" : ""}{drift}%
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </section>
   );
 }
