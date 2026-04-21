@@ -6,7 +6,7 @@ type StatusPanelProps = {
   events: TaskEvent[];
 };
 
-const B = "rgba(0,0,0,0.08)";
+const B = "rgba(0,0,0,0.22)";
 
 export function StatusPanel({ taskId, isRunning, events }: StatusPanelProps) {
   const reputationEvents = events.filter((e): e is ReputationUpdateEvent => e.type === "reputation_update");
@@ -20,21 +20,21 @@ export function StatusPanel({ taskId, isRunning, events }: StatusPanelProps) {
 
   return (
     <section className="shrink-0 flex flex-col" style={{ borderBottom: `1px solid ${B}` }}>
-      <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: `1px solid ${B}` }}>
-        <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-tertiary">Task Status</p>
+      <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${B}` }}>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">Task Status</p>
         {isRunning && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-positive live-dot" />
-            <span className="text-[10px] font-medium text-positive/80">Live</span>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-positive live-dot" />
+            <span className="text-[12px] font-medium text-positive/80">Live</span>
           </div>
         )}
       </div>
 
       <div className="grid grid-cols-3" style={{ borderBottom: `1px solid ${B}` }}>
         {stats.map(({ label, value, mono }, idx) => (
-          <div key={label} className="px-4 py-3" style={idx < 2 ? { borderRight: `1px solid ${B}` } : {}}>
-            <p className="text-[9px] font-medium uppercase tracking-[0.08em] text-text-tertiary">{label}</p>
-            <p className={`mt-1 text-[11px] font-medium text-text-primary truncate ${mono ? "font-mono tabular-nums" : ""}`}>
+          <div key={label} className="px-6 py-5" style={idx < 2 ? { borderRight: `1px solid ${B}` } : {}}>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">{label}</p>
+            <p className={`mt-2 text-[14px] font-medium text-text-primary truncate ${mono ? "font-mono tabular-nums" : ""}`}>
               {value}
             </p>
           </div>
@@ -44,7 +44,7 @@ export function StatusPanel({ taskId, isRunning, events }: StatusPanelProps) {
       {reputationEvents.map((event, i) => (
         <div
           key={`${event.agent}-${i}`}
-          className="px-4 py-2.5 text-[11px] text-text-secondary"
+          className="px-6 py-4 text-[13px] text-text-secondary"
           style={{ borderBottom: `1px solid ${B}` }}
         >
           Rep: <span className="text-text-primary">{event.agent}</span>{" "}
@@ -54,7 +54,7 @@ export function StatusPanel({ taskId, isRunning, events }: StatusPanelProps) {
 
       {refundEvent && (
         <div
-          className="px-4 py-2.5 text-[11px] text-positive"
+          className="px-6 py-4 text-[13px] text-positive"
           style={{ borderBottom: `1px solid ${B}`, background: "var(--color-positive-dim)" }}
         >
           Refund confirmed: ${refundEvent.amount.toFixed(2)}
@@ -62,7 +62,7 @@ export function StatusPanel({ taskId, isRunning, events }: StatusPanelProps) {
             <a
               href={`https://explorer.solana.com/tx/${refundEvent.txSig}?cluster=devnet`}
               target="_blank" rel="noreferrer"
-              className="ml-2 font-mono text-[10px] opacity-60 underline hover:opacity-100"
+              className="ml-3 font-mono text-[12px] opacity-60 underline hover:opacity-100"
             >
               {refundEvent.txSig.slice(0, 8)}…
             </a>

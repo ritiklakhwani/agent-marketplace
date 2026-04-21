@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletButton } from "@/components/WalletButton";
@@ -10,6 +11,8 @@ import { CompositionChain } from "@/components/CompositionChain";
 import { StatusPanel } from "@/components/StatusPanel";
 import { PortfolioView } from "@/components/PortfolioView";
 import { AgentOverview } from "@/components/AgentOverview";
+import { ApproveDelegation } from "@/components/ApproveDelegation";
+import { FundFromArc } from "@/components/FundFromArc";
 import { useTaskStream } from "@/hooks/useTaskStream";
 import { agents } from "@/lib/agents";
 
@@ -21,7 +24,13 @@ const TABS = [
   { slug: "remittance-agent" as const, label: remitAgent.name },
 ];
 
-const B = "rgba(0,0,0,0.08)";
+const B = "rgba(0,0,0,0.22)";
+
+// Per-agent accents — kept deliberately low-saturation so they read as a hint, not a theme.
+const ACCENT: Record<"swap-agent" | "remittance-agent", { solid: string; tint: string; wash: string }> = {
+  "swap-agent":       { solid: "#2563eb", tint: "rgba(37,99,235,0.08)",  wash: "rgba(37,99,235,0.015)"  },
+  "remittance-agent": { solid: "#dc2626", tint: "rgba(220,38,38,0.08)",  wash: "rgba(220,38,38,0.015)"  },
+};
 
 export function MainApp() {
   const [activeAgent,  setActiveAgent]  = useState<"swap-agent" | "remittance-agent">("swap-agent");
@@ -47,16 +56,16 @@ export function MainApp() {
       {/* ── NAVBAR ── */}
       <nav
         className="shrink-0 flex items-stretch"
-        style={{ height: 44, background: "#ffffff", borderBottom: `1px solid ${B}` }}
+        style={{ height: 60, background: "#ffffff", borderBottom: `1px solid ${B}` }}
         onMouseLeave={() => setHoveredAgent(null)}
       >
         {/* Logo */}
         <div
-          className="flex items-center gap-2 px-5 shrink-0"
+          className="flex items-center gap-3 px-7 shrink-0"
           style={{ borderRight: `1px solid ${B}` }}
         >
-          <span className="text-[15px] font-bold text-text-primary select-none">◈</span>
-          <span className="text-[12px] font-semibold tracking-tight text-text-primary">AgentBazaar</span>
+          <span className="text-[20px] font-bold text-text-primary select-none">◈</span>
+          <span className="text-[15px] font-semibold tracking-tight text-text-primary">AgentBazaar</span>
         </div>
 
         {/* Toggle — centred */}
@@ -70,9 +79,9 @@ export function MainApp() {
                   key={slug}
                   onClick={() => setActiveAgent(slug)}
                   onMouseEnter={() => setHoveredAgent(slug)}
-                  className="relative flex items-center px-8 h-full bg-transparent border-none outline-none cursor-pointer z-[1] transition-colors duration-150"
+                  className="relative flex items-center px-10 h-full bg-transparent border-none outline-none cursor-pointer z-[1] transition-colors duration-150"
                   style={{
-                    fontSize: "11px",
+                    fontSize: "14px",
                     fontWeight: 500,
                     color: isActive ? "#111111" : isHovered ? "#6b7280" : "#a1a1aa",
                     borderRight: idx < TABS.length - 1 ? `1px solid ${B}` : "none",
@@ -90,7 +99,7 @@ export function MainApp() {
                     <motion.div
                       layoutId="tab-indicator"
                       className="absolute bottom-0 left-0 right-0"
-                      style={{ height: 1.5, background: "#111111" }}
+                      style={{ height: 2, background: ACCENT[slug].solid }}
                       transition={{ type: "spring", stiffness: 400, damping: 35 }}
                     />
                   )}
@@ -103,21 +112,19 @@ export function MainApp() {
 
         {/* Right nav */}
         <div
-          className="flex items-center gap-5 px-5 shrink-0"
+          className="flex items-center gap-5 px-7 shrink-0"
           style={{ borderLeft: `1px solid ${B}` }}
         >
-          {["Docs", "About"].map((label) => (
-            <a
-              key={label}
-              href="#"
-              className="text-[11px] transition-colors duration-150"
-              style={{ color: "#a1a1aa", textDecoration: "none" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#6b7280")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#a1a1aa")}
-            >
-              {label}
-            </a>
-          ))}
+          <Link
+            href="/docs"
+            className="text-[14px] transition-colors duration-150"
+            style={{ color: "#a1a1aa", textDecoration: "none" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#6b7280")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#a1a1aa")}
+          >
+            Docs
+          </Link>
+          <ApproveDelegation />
           <WalletButton />
         </div>
       </nav>
@@ -141,9 +148,17 @@ export function MainApp() {
           </div>
         )}
 
+        {/* Fund-from-Arc — only on the remittance tab, lets the user bridge
+            USDC from Arc testnet into Solana via Circle CCTP V2.
+            (Delegation status moved into the nav next to the wallet button.) */}
+        {activeAgent === "remittance-agent" ? <FundFromArc /> : null}
+
         {/* Main grid */}
         <div className="flex-1 min-h-0 overflow-hidden grid xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="flex flex-col min-h-0 overflow-hidden" style={{ borderRight: `1px solid ${B}` }}>
+          <div
+            className="flex flex-col min-h-0 overflow-hidden"
+            style={{ borderRight: `1px solid ${B}`, background: ACCENT[activeAgent].wash }}
+          >
             <TaskInput
               isRunning={stream.isRunning}
               defaultPrompt={currentAgent.promptPlaceholder}
@@ -160,17 +175,27 @@ export function MainApp() {
             )}
           </div>
 
-          <div className="flex flex-col min-h-0 overflow-hidden">
+          <div
+            className="flex flex-col min-h-0 overflow-hidden"
+            style={{ background: ACCENT[activeAgent].wash }}
+          >
             <StatusPanel taskId={stream.taskId} isRunning={stream.isRunning} events={stream.events} />
-            <CompositionChain events={stream.events} />
+            <CompositionChain
+              events={stream.events}
+              subtitle={
+                activeAgent === "swap-agent"
+                  ? "Portfolio → Oracle → Swap"
+                  : "Burn on Solana → Circle attest → Mint on Sepolia"
+              }
+            />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 flex items-center justify-center" style={{ height: 36, borderTop: `1px solid ${B}` }}>
+        <div className="shrink-0 flex items-center justify-center" style={{ height: 48, borderTop: `1px solid ${B}` }}>
           <button
             onClick={stream.reset}
-            className="text-[11px] bg-transparent border-none cursor-pointer transition-colors duration-150"
+            className="text-[13px] bg-transparent border-none cursor-pointer transition-colors duration-150"
             style={{ color: "#a1a1aa" }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#6b7280")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "#a1a1aa")}

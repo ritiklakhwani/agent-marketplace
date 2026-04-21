@@ -12,8 +12,8 @@
   --color-bg-hover:       rgba(0, 0, 0, 0.025);
 
   /* Structural borders */
-  --color-border:       rgba(0, 0, 0, 0.08);
-  --color-border-light: rgba(0, 0, 0, 0.04);
+  --color-border:       rgba(0, 0, 0, 0.22);
+  --color-border-light: rgba(0, 0, 0, 0.08);
 
   /* Text */
   --color-text-primary:   #111111;
@@ -32,8 +32,7 @@
 
 html, body {
   margin: 0;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
   overscroll-behavior: none;
 }
 

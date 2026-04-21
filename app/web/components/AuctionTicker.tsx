@@ -12,7 +12,7 @@ const AGENT_LABELS: Record<string, string> = {
   "portfolio-b": "Portfolio Agent B",
 };
 
-const B = "rgba(0,0,0,0.08)";
+const B = "rgba(0,0,0,0.22)";
 
 export function AuctionTicker({ events }: AuctionTickerProps) {
   const bids = events.filter((e): e is BidEvent => e.type === "bid");
@@ -24,11 +24,11 @@ export function AuctionTicker({ events }: AuctionTickerProps) {
   }, {});
 
   return (
-    <section className="shrink-0 flex flex-col" style={{ borderBottom: `1px solid ${B}` }}>
-      <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: `1px solid ${B}` }}>
-        <div className="flex items-center gap-3">
-          <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-tertiary">Live Auction</p>
-          <p className="text-[10px] text-text-tertiary">Dutch · SSE stream</p>
+    <section className="flex-1 min-h-0 flex flex-col" style={{ borderBottom: `1px solid ${B}` }}>
+      <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${B}` }}>
+        <div className="flex items-center gap-4">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">Live Auction</p>
+          <p className="text-[12px] text-text-tertiary">Dutch · SSE stream</p>
         </div>
         <AnimatePresence>
           {winnerEvent && (
@@ -38,7 +38,7 @@ export function AuctionTicker({ events }: AuctionTickerProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="text-[10px] font-medium px-2 py-0.5"
+              className="text-[12px] font-medium px-3 "
               style={{ background: "var(--color-positive-dim)", color: "var(--color-positive)" }}
             >
               {AGENT_LABELS[winnerEvent.winner] ?? winnerEvent.winner} won
@@ -47,24 +47,39 @@ export function AuctionTicker({ events }: AuctionTickerProps) {
         </AnimatePresence>
       </div>
 
-      <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${B}` }}>
+      <div className="grid grid-cols-2 flex-1" style={{ borderBottom: `1px solid ${B}` }}>
         {["portfolio-a", "portfolio-b"].map((agentId, idx) => {
           const isWinner   = winnerEvent?.winner === agentId;
           const currentBid = latestByAgent[agentId];
+          const letter     = agentId.endsWith("-a") ? "A" : "B";
 
           return (
             <motion.div
               key={agentId}
-              className="px-4 py-3"
+              className="relative px-8 py-8 flex flex-col justify-center overflow-hidden"
               animate={{ background: isWinner ? "rgba(22,163,74,0.05)" : "transparent" }}
               transition={{ duration: 0.4 }}
               style={idx === 0 ? { borderRight: `1px solid ${B}` } : {}}
             >
-              <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-tertiary">
-                {AGENT_LABELS[agentId]}
-              </p>
+              {/* Agent ID as a watermark — large faded letter lives behind the
+                  bid number. Subtle but asserts identity without a redundant
+                  header. */}
+              <span
+                aria-hidden
+                className="absolute font-mono font-semibold select-none pointer-events-none"
+                style={{
+                  right: -8,
+                  top: -24,
+                  fontSize: "180px",
+                  lineHeight: 1,
+                  color: isWinner ? "rgba(22,163,74,0.08)" : "rgba(0,0,0,0.04)",
+                  letterSpacing: "-0.05em",
+                }}
+              >
+                {letter}
+              </span>
 
-              <div className="mt-1 h-7 overflow-hidden">
+              <div className="relative h-20 overflow-hidden">
                 <AnimatePresence mode="wait">
                   <motion.p
                     key={`${agentId}-${currentBid ?? "—"}`}
@@ -72,14 +87,15 @@ export function AuctionTicker({ events }: AuctionTickerProps) {
                     animate={{ y: 0,  opacity: 1, color: "#111111" }}
                     exit={{ y: -14, opacity: 0 }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="text-[22px] font-semibold font-mono tabular-nums leading-none"
+                    className="text-[72px] font-semibold font-mono tabular-nums leading-none"
                   >
                     {currentBid !== undefined ? `${currentBid.toFixed(1)}%` : "—"}
                   </motion.p>
                 </AnimatePresence>
               </div>
 
-              <p className="mt-1 text-[10px] text-text-tertiary">
+              <p className="relative mt-4 text-[12px] text-text-tertiary">
+                <span className="font-mono text-text-primary mr-2">· {letter}</span>
                 {isWinner ? winnerEvent!.reason : "Awaiting bid…"}
               </p>
             </motion.div>

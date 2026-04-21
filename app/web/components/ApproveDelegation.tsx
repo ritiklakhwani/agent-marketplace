@@ -22,13 +22,21 @@ function formatUsdc(micro: bigint): string {
   return (Number(micro) / 10 ** USDC_DECIMALS).toFixed(2);
 }
 
+/**
+ * Compact delegation control — designed to live in the nav bar next to the
+ * wallet button. Three visual states:
+ *
+ * - "Approve 20 USDC" button (dark) when no active delegation
+ * - "20.00 USDC" pill (green dot) with expandable tooltip when authorized
+ * - "Get USDC" amber pill when the user's ATA doesn't exist yet
+ */
 export function ApproveDelegation() {
   const { connection } = useConnection();
   const { publicKey, signTransaction } = useWallet();
   const [phase, setPhase] = useState<Phase>("idle");
   const [status, setStatus] = useState<DelegationStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [lastTxSig, setLastTxSig] = useState<string | null>(null);
+  const [isHovering, setIsHovering] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!publicKey || !DELEGATE_PUBKEY_STR) return;
@@ -73,121 +81,135 @@ export function ApproveDelegation() {
       const sig = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: false,
       });
-      setLastTxSig(sig);
       await connection.confirmTransaction(sig, "confirmed");
       await refresh();
     } catch (e) {
-      setError(String(e));
+      const msg = String(e);
+      if (msg.includes("already been processed")) {
+        await refresh();
+        return;
+      }
+      if (msg.includes("User rejected")) {
+        setPhase("idle");
+        return;
+      }
+      setError(msg);
       setPhase("error");
     }
   };
 
-  if (!publicKey) {
-    return (
-      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        Connect a wallet to authorize AgentBazaar to move USDC on your behalf.
-      </section>
-    );
-  }
+  if (!publicKey || !DELEGATE_PUBKEY_STR) return null;
 
-  if (!DELEGATE_PUBKEY_STR) {
-    return (
-      <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
-        Delegation target not configured. Set
-        <code className="mx-1 rounded bg-rose-100 px-1">NEXT_PUBLIC_AGENT_HOT_WALLET_PUBKEY</code>
-        in .env.local.
-      </section>
-    );
-  }
-
+  // No ATA — user has Phantom but no devnet USDC yet
   if (status && !status.userAtaExists) {
     return (
-      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        <p className="font-semibold">No devnet USDC in this wallet.</p>
-        <p className="mt-1">
-          Visit <a className="underline" href="https://faucet.circle.com" target="_blank" rel="noreferrer">faucet.circle.com</a>, select Solana Devnet, paste your wallet address, and request USDC. Then click &quot;Refresh&quot; below.
-        </p>
-        <button
-          onClick={refresh}
-          className="mt-2 rounded-full bg-amber-900 px-3 py-1 text-xs font-semibold text-amber-50"
-        >
-          Refresh
-        </button>
-      </section>
+      <a
+        href="https://faucet.circle.com"
+        target="_blank"
+        rel="noreferrer"
+        className="text-[12px] font-medium px-3 py-1.5 flex items-center gap-2 transition-opacity hover:opacity-80"
+        style={{ background: "rgba(245,158,11,0.12)", color: "#92400e" }}
+        title="Get devnet USDC from Circle's faucet, then refresh"
+      >
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#d97706" }} />
+        Get USDC
+      </a>
     );
   }
 
+  // Authorized — compact pill with hover tooltip
   if (status?.isActive) {
     return (
-      <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-        <p className="font-semibold">
-          Authorization active · {formatUsdc(status.delegatedAmount)} USDC remaining
-        </p>
-        <p className="mt-1 text-emerald-800">
-          AgentBazaar can spend up to this amount from your wallet to pay agents. Each rebalance consumes ~1 USDC.
-        </p>
-        <div className="mt-1 text-xs text-emerald-700">
-          Wallet balance: {formatUsdc(status.balance)} USDC
+      <div
+        className="relative"
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      >
+        <div
+          className="text-[12px] font-medium px-3 py-1.5 flex items-center gap-2 cursor-default"
+          style={{ background: "var(--color-positive-dim)", color: "var(--color-positive)" }}
+        >
+          <span
+            className="h-1.5 w-1.5 rounded-full live-dot"
+            style={{ background: "var(--color-positive)" }}
+          />
+          <span className="font-mono tabular-nums text-text-primary">
+            {formatUsdc(status.delegatedAmount)}
+          </span>
+          <span className="text-text-tertiary">USDC</span>
         </div>
-      </section>
+
+        {isHovering ? (
+          <div
+            className="absolute right-0 top-full mt-2 z-50 min-w-[240px] px-4 py-3"
+            style={{
+              background: "#ffffff",
+              border: "1px solid rgba(0,0,0,0.22)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+            }}
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+              Delegation
+            </p>
+            <p className="mt-1 text-[12px] text-text-primary">
+              Remaining to spend:{" "}
+              <span className="font-mono tabular-nums font-semibold">
+                {formatUsdc(status.delegatedAmount)}
+              </span>{" "}
+              USDC
+            </p>
+            <p className="mt-0.5 text-[12px] text-text-secondary">
+              Wallet balance:{" "}
+              <span className="font-mono tabular-nums">
+                {formatUsdc(status.balance)}
+              </span>{" "}
+              USDC
+            </p>
+            <p className="mt-2 text-[11px] text-text-tertiary leading-relaxed">
+              Each rebalance consumes ~1 USDC from this allowance.
+            </p>
+          </div>
+        ) : null}
+      </div>
     );
   }
 
+  // Not authorized — compact dark button
+  const busy = phase === "signing" || phase === "confirming" || phase === "checking";
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-4">
-      <p className="text-sm font-semibold text-zinc-900">
-        Step 1 · Authorize AgentBazaar
-      </p>
-      <p className="mt-1 text-sm text-zinc-600">
-        One-time approval lets AgentBazaar spend up to {formatUsdc(DEFAULT_DELEGATION_MICRO_USDC)} USDC from your wallet to pay agents for tasks. You can revoke at any time.
-      </p>
-
-      {status ? (
-        <div className="mt-2 text-xs text-zinc-500">
-          Balance: {formatUsdc(status.balance)} USDC
-          {status.delegate ? (
-            <> · Existing delegate: {status.delegate.toBase58().slice(0, 8)}...</>
-          ) : null}
-        </div>
-      ) : null}
+    <div className="relative">
+      <button
+        onClick={handleApprove}
+        disabled={busy}
+        className="text-[12px] font-medium px-3 py-1.5 border-none cursor-pointer transition-colors duration-150 flex items-center gap-2"
+        style={
+          busy
+            ? { background: "rgba(0,0,0,0.05)", color: "#a1a1aa", cursor: "not-allowed" }
+            : { background: "#111111", color: "#ffffff" }
+        }
+      >
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#f59e0b" }} />
+        {phase === "signing"
+          ? "Sign in wallet…"
+          : phase === "confirming"
+            ? "Confirming…"
+            : phase === "checking"
+              ? "Checking…"
+              : `Approve ${formatUsdc(DEFAULT_DELEGATION_MICRO_USDC)} USDC`}
+      </button>
 
       {error ? (
-        <p className="mt-2 rounded-lg bg-rose-50 p-2 text-xs text-rose-900">
-          {error}
-        </p>
+        <div
+          className="absolute right-0 top-full mt-2 z-50 min-w-[240px] max-w-[320px] px-4 py-3 text-[11px]"
+          style={{
+            background: "var(--color-negative-dim)",
+            border: "1px solid rgba(220,38,38,0.22)",
+            color: "var(--color-negative)",
+          }}
+        >
+          {error.slice(0, 200)}
+        </div>
       ) : null}
-
-      <div className="mt-3 flex items-center gap-2">
-        <button
-          onClick={handleApprove}
-          disabled={phase === "signing" || phase === "confirming" || phase === "checking"}
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:bg-zinc-300"
-        >
-          {phase === "signing" && "Sign in wallet..."}
-          {phase === "confirming" && "Confirming..."}
-          {phase === "checking" && "Checking..."}
-          {(phase === "idle" || phase === "error") && `Approve ${formatUsdc(DEFAULT_DELEGATION_MICRO_USDC)} USDC`}
-          {phase === "ready" && "Approved"}
-        </button>
-        <button
-          onClick={refresh}
-          disabled={phase === "signing" || phase === "confirming"}
-          className="text-xs text-zinc-500 underline disabled:text-zinc-300"
-        >
-          Refresh
-        </button>
-      </div>
-
-      {lastTxSig ? (
-        <a
-          href={`https://explorer.solana.com/tx/${lastTxSig}?cluster=devnet`}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-2 block text-xs text-zinc-500 underline"
-        >
-          Last approval tx: {lastTxSig.slice(0, 12)}...
-        </a>
-      ) : null}
-    </section>
+    </div>
   );
 }

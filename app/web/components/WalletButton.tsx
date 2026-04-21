@@ -17,7 +17,7 @@ export function WalletButton() {
         fontSize: "11px",
         fontWeight: "500",
         height: "26px",
-        padding: "0 10px",
+        padding: "10px 10px",
         color: "#111111",
         lineHeight: "1",
       }}

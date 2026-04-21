@@ -17,6 +17,7 @@ type Step = {
 };
 
 const DEFAULT_AMOUNT = 1;
+const B = "rgba(0,0,0,0.22)";
 
 export function FundFromArc() {
   const { connection } = useConnection();
@@ -46,7 +47,6 @@ export function FundFromArc() {
     setBalanceAfter(null);
     setSteps((prev) => prev.map((s) => ({ ...s, state: "idle", detail: undefined })));
 
-    // Snapshot current USDC balance so we can show the delta after the flow
     try {
       const usdcMint = process.env.NEXT_PUBLIC_USDC_DEVNET_MINT!;
       const accounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
@@ -67,40 +67,24 @@ export function FundFromArc() {
           amount: DEFAULT_AMOUNT,
         }),
       });
-      if (!res.ok) {
-        throw new Error(`/api/cctp/fund-from-arc failed: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`/api/cctp/fund-from-arc failed: ${res.status}`);
       const { taskId: id } = (await res.json()) as { taskId: string };
       setTaskId(id);
 
-      // Subscribe to SSE for step-by-step progress
       const es = new EventSource(`/api/sse/task/${id}`);
       es.onmessage = (ev) => {
         const data = JSON.parse(ev.data);
         if (data.type === "execution_step") {
-          if (data.stepIndex === 0) {
-            setStep("burn", {
-              state: data.status,
-              detail: data.label,
-            });
-          } else if (data.stepIndex === 1) {
-            setStep("attest", {
-              state: data.status,
-              detail: data.label,
-            });
-          } else if (data.stepIndex === 2) {
-            setStep("mint", {
-              state: data.status,
-              detail: data.label,
-            });
-          } else if (data.status === "failed") {
+          if (data.stepIndex === 0) setStep("burn",   { state: data.status, detail: data.label });
+          else if (data.stepIndex === 1) setStep("attest", { state: data.status, detail: data.label });
+          else if (data.stepIndex === 2) setStep("mint",   { state: data.status, detail: data.label });
+          else if (data.status === "failed") {
             setError(data.label);
             setIsRunning(false);
           }
         } else if (data.type === "task_complete") {
           setIsRunning(false);
           es.close();
-          // Refresh balance after ~2s to catch final state
           setTimeout(async () => {
             if (!publicKey) return;
             try {
@@ -124,118 +108,190 @@ export function FundFromArc() {
     }
   };
 
+  if (!publicKey) return null;
+
   return (
-    <section className="rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-sky-50 p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-zinc-900">
-            Fund from Arc · Circle CCTP V2
+    <section className="shrink-0 flex flex-col" style={{ borderBottom: `1px solid ${B}` }}>
+      {/* Header row */}
+      <div
+        className="flex items-center justify-between px-6 py-4"
+        style={{ borderBottom: `1px solid ${B}` }}
+      >
+        <div className="flex items-center gap-4">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+            Fund from Arc
           </p>
-          <p className="mt-1 text-sm text-zinc-600">
-            Bridge USDC from Circle Arc testnet into your Solana wallet. Admin burns on Arc, Circle attests, your Solana ATA is credited.
+          <p className="text-[12px] text-text-tertiary">
+            Circle CCTP V2 · Arc → Solana
           </p>
         </div>
-        <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-medium text-violet-800">
-          Cross-chain
-        </span>
+        <div className="flex items-center gap-3">
+          {/* Status pill: red "Cross-chain" during idle/running, green delta
+              once the bridged USDC lands on Solana. */}
+          <AnimatePresence mode="wait">
+            {balanceAfter !== null && balanceBefore !== null ? (
+              <motion.span
+                key="delta"
+                initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="text-[12px] font-medium px-3 py-1 font-mono tabular-nums"
+                style={{ background: "var(--color-positive-dim)", color: "var(--color-positive)" }}
+                title={`Solana USDC balance ${balanceBefore.toFixed(2)} → ${balanceAfter.toFixed(2)}`}
+              >
+                +{(balanceAfter - balanceBefore).toFixed(2)} USDC
+              </motion.span>
+            ) : (
+              <motion.span
+                key="badge"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-[12px] font-medium px-3 py-1"
+                style={{ background: "rgba(220,38,38,0.08)", color: "#dc2626" }}
+              >
+                Cross-chain
+              </motion.span>
+            )}
+          </AnimatePresence>
+          <button
+            onClick={handleFund}
+            disabled={isRunning}
+            className="text-[12px] font-medium px-4 py-2 border-none cursor-pointer transition-colors duration-150"
+            style={
+              isRunning
+                ? { background: "rgba(0,0,0,0.05)", color: "#a1a1aa", cursor: "not-allowed" }
+                : { background: "#111111", color: "#ffffff" }
+            }
+          >
+            {isRunning ? "Bridging…" : `Fund ${DEFAULT_AMOUNT} USDC`}
+          </button>
+        </div>
       </div>
 
-      {!publicKey ? (
-        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          Connect your wallet to receive bridged USDC.
-        </p>
-      ) : (
-        <div className="mt-4 space-y-2">
-          {steps.map((step, idx) => (
-            <motion.div
+      {/* 3-step progress grid — each step has a fill-bar background that
+          animates left→right while pending and snaps green on complete.
+          Uses transform: scaleX() (GPU-accelerated) for silky-smooth motion. */}
+      <div className="grid grid-cols-3">
+        {steps.map((step, idx) => {
+          // Per-step expected duration so the bar paces with real latency.
+          const expectedDurationSec =
+            step.key === "burn" ? 15 : step.key === "attest" ? 75 : 10;
+
+          const fillColor =
+            step.state === "complete"
+              ? "rgba(22,163,74,0.14)"
+              : step.state === "failed"
+                ? "rgba(220,38,38,0.14)"
+                : step.state === "pending"
+                  ? "rgba(37,99,235,0.10)"
+                  : "transparent";
+
+          const targetScale =
+            step.state === "complete" || step.state === "failed"
+              ? 1
+              : step.state === "pending"
+                ? 0.92
+                : 0;
+
+          return (
+            <div
               key={step.key}
-              layout
-              initial={false}
-              animate={{
-                backgroundColor:
-                  step.state === "complete"
-                    ? "#ecfdf5"
-                    : step.state === "failed"
-                      ? "#fef2f2"
-                      : step.state === "pending"
-                        ? "#eff6ff"
-                        : "#fafafa",
+              className="relative px-5 flex items-center gap-3 overflow-hidden"
+              style={{
+                // Fixed height so when step.detail populates (adds a second
+                // text line), the cell doesn't grow and push sibling
+                // sections out. Detail truncates within this envelope.
+                height: 56,
+                ...(idx < 2 ? { borderRight: `1px solid ${B}` } : {}),
               }}
-              className="flex items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2 text-sm"
             >
+              {/* Progress fill — scaleX from the left edge, GPU-accelerated */}
+              <motion.div
+                className="absolute inset-0 pointer-events-none origin-left"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: targetScale, background: fillColor }}
+                transition={{
+                  scaleX:
+                    step.state === "pending"
+                      ? { duration: expectedDurationSec, ease: [0.16, 1, 0.3, 1] }
+                      : { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+                  background: { duration: 0.35, ease: "easeOut" },
+                }}
+                style={{ willChange: "transform" }}
+              />
+
+              {/* Content sits on top of the fill */}
               <span
-                className={`inline-block h-6 w-6 rounded-full text-center text-xs font-semibold leading-6 ${
-                  step.state === "complete"
-                    ? "bg-emerald-500 text-white"
-                    : step.state === "failed"
-                      ? "bg-rose-500 text-white"
-                      : step.state === "pending"
-                        ? "bg-sky-500 text-white"
-                        : "bg-zinc-300 text-zinc-600"
-                }`}
+                className="relative text-[11px] font-mono tabular-nums w-6 inline-block text-center font-semibold"
+                style={{
+                  color:
+                    step.state === "complete"
+                      ? "var(--color-positive)"
+                      : step.state === "failed"
+                        ? "var(--color-negative)"
+                        : step.state === "pending"
+                          ? "#2563eb"
+                          : "#a1a1aa",
+                }}
               >
-                {step.state === "complete" ? "✓" : step.state === "failed" ? "✕" : idx + 1}
+                {step.state === "complete" ? "✓" : step.state === "failed" ? "✕" : String(idx + 1).padStart(2, "0")}
               </span>
-              <div className="flex-1">
-                <p className="font-medium text-zinc-900">{step.label}</p>
+              <div className="relative flex flex-col min-w-0">
+                <p className="text-[13px] font-medium text-text-primary truncate">{step.label}</p>
                 {step.detail ? (
-                  <p className="text-xs text-zinc-500">{step.detail}</p>
+                  <p className="text-[11px] text-text-tertiary truncate">{step.detail}</p>
                 ) : null}
               </div>
               {step.state === "pending" ? (
-                <span className="h-2 w-2 animate-pulse rounded-full bg-sky-500" />
+                <span className="relative ml-auto h-2 w-2 rounded-full bg-[#2563eb] live-dot" />
               ) : null}
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      <AnimatePresence>
-        {balanceAfter !== null && balanceBefore !== null ? (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
-          >
-            Your Solana USDC balance: {balanceBefore.toFixed(2)} → <strong>{balanceAfter.toFixed(2)}</strong>{" "}
-            ({(balanceAfter - balanceBefore).toFixed(2)} USDC bridged from Arc)
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
 
       {error ? (
-        <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900">
+        <div
+          className="px-6 py-2.5 text-[12px]"
+          style={{
+            borderTop: `1px solid ${B}`,
+            background: "var(--color-negative-dim)",
+            color: "var(--color-negative)",
+          }}
+        >
           {error}
-        </p>
+        </div>
       ) : null}
 
+      {/* Footer: task ID + Arc Explorer link. After success, also folds in
+          the before→after Solana USDC balance as a low-key mono line so the
+          info doesn't take a dedicated green banner. */}
       {taskId ? (
-        <p className="mt-2 text-xs text-zinc-500">
-          Task {taskId} — see{" "}
+        <div
+          className="px-6 py-2 text-[11px] text-text-tertiary flex items-center justify-between gap-4"
+          style={{ borderTop: `1px solid ${B}` }}
+        >
+          <span className="font-mono truncate">Task {taskId.slice(0, 16)}…</span>
+          {balanceAfter !== null && balanceBefore !== null ? (
+            <span className="font-mono tabular-nums whitespace-nowrap">
+              Solana USDC{" "}
+              <span className="text-text-tertiary">{balanceBefore.toFixed(2)}</span>
+              {" → "}
+              <span style={{ color: "var(--color-positive)" }}>{balanceAfter.toFixed(2)}</span>
+            </span>
+          ) : null}
           <a
             href={ARC_EXPLORER}
             target="_blank"
             rel="noreferrer"
-            className="underline hover:text-zinc-900"
+            className="underline hover:text-text-primary transition-colors shrink-0"
           >
-            Arc Explorer
-          </a>{" "}
-          for the burn tx.
-        </p>
+            Arc Explorer →
+          </a>
+        </div>
       ) : null}
-
-      <div className="mt-3 flex items-center justify-between">
-        <p className="text-xs text-zinc-500">
-          Funds {DEFAULT_AMOUNT} USDC to your wallet. Arc attestation takes 2-5 min.
-        </p>
-        <button
-          onClick={handleFund}
-          disabled={!publicKey || isRunning}
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700 disabled:bg-zinc-300"
-        >
-          {isRunning ? "Bridging..." : `Fund ${DEFAULT_AMOUNT} USDC from Arc`}
-        </button>
-      </div>
     </section>
   );
 }
